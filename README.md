@@ -1,20 +1,22 @@
 
 
 
-
-
-print("ALL 6 macro started")
+print("ALL 6 CHECK STARTED")
 
 for conn in App.Connections:
-    net_name = "No Net"
+    if conn.Name in ["CAN1", "CAN2", "CAN3", "CAN4", "CAN5", "CAN6"]:
 
-    if conn.CommunicationObject is not None:
-        net_name = conn.CommunicationObject.NetName
+        if conn.CommunicationObject is not None:
+            print(
+                conn.Name,
+                "| Enabled:", conn.IsEnabled,
+                "| Net:", conn.CommunicationObject.NetName
+            )
+        else:
+            print(
+                conn.Name,
+                "| Enabled:", conn.IsEnabled,
+                "| Net: No Net"
+            )
 
-    print(
-        "Name:", conn.Name,
-        "| Enabled:", conn.IsEnabled,
-        "| Net:", net_name
-    )
-
-print("Finished checking connections")
+print("ALL 6 CHECK FINISHED")
