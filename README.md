@@ -1,12 +1,9 @@
 
 
 
-def CAN_ON():
+def TOGGLE_CAN():
     for conn in App.Connections:
         if conn.Name in ["CAN1", "CAN2"]:
-            conn.IsEnabled = True
+            conn.IsEnabled = not conn.IsEnabled
 
-def CAN_OFF():
-    for conn in App.Connections:
-        if conn.Name in ["CAN1", "CAN2"]:
-            conn.IsEnabled = False
+TOGGLE_CAN()
