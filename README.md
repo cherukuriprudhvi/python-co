@@ -2,24 +2,19 @@
 
 
 
-print("ALL 6 macro started")
 
-for conn in App.Connections:
 
-    net_name = "No Net"
-
-    if conn.CommunicationObject is not None:
-
-        net_name = conn.CommunicationObject.NetName
-
-    print(
-
-        "Name:", conn.Name,
-
-        "| Enabled:", conn.IsEnabled,
-
-        "| Net:", net_name
-
-    )
-
-print("Finished checking connections")
+def ALL_6_START():
+    connection_names = [
+        "Untitled@pcan_usb",
+        "Untitled1@pcan_usb",
+        "Untitled2@pcan_usb",
+        "Untitled3@pcan_usb",
+        "Untitled4@pcan_usb",
+        "Untitled6@pcan_usb"
+    ]
+    
+    # 2. Initialize the PCAN client interface
+    try:
+        myClient = win32com.client.Dispatch("PCAN.PCANClient")
+        ...
