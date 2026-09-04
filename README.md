@@ -3,7 +3,6 @@
 
 
 
-
 def ALL_6_START():
     connection_names = [
         "Untitled@pcan_usb",
