@@ -1,10 +1,11 @@
 
 
 
-# Find the CAN1 mode signal and change it once to Standby
-
 for sig in App.Signals:
-    if sig.Name.startswith("DBC-1.") and "EMduleMde_D_Rq3" in sig.Name:
+    if "EMduleMde_D_Rq3" in sig.Name:
+        print("FOUND:", sig.Name)
+        print("BEFORE:", sig.Value)
+
         sig.Value = 1
-        print("CAN1 changed to Standby")
-        break
+
+        print("AFTER:", sig.Value)
