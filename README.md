@@ -1,9 +1,7 @@
 
 
 
-def TOGGLE_CAN():
-    for conn in App.Connections:
-        if conn.Name in ["CAN1", "CAN2"]:
-            conn.IsEnabled = not conn.IsEnabled
+sig = Signals("EMduleMde_D_Rq3")
+sig.Value = 1
 
-TOGGLE_CAN()
+print("CAN1 mode set to Standby")
