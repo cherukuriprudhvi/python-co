@@ -1,10 +1,10 @@
 
+for conn in App.Connections:
+    if conn.Name in ["CAN1", "CAN2", "CAN3", "CAN4", "CAN5", "CAN6"]:
+        conn.IsEnabled = True
+        print(conn.Name, "ON")
 
 for conn in App.Connections:
-    if conn.Name in ["CAN1", "CAN2"]:
-        print(conn.Name, "BEFORE =", conn.IsEnabled)
-
-for conn in App.Connections:
-    if conn.Name in ["CAN1", "CAN2"]:
-        conn.IsEnabled = not conn.IsEnabled
-        print(conn.Name, "AFTER =", conn.IsEnabled)
+    if conn.Name in ["CAN1", "CAN2", "CAN3", "CAN4", "CAN5", "CAN6"]:
+        conn.IsEnabled = False
+        print(conn.Name, "OFF")
