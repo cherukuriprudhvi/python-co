@@ -4,8 +4,9 @@
 # Starts CAN1-CAN6 separate trace files.
 # Records for 10 seconds.
 # Stops all six tracers.
-# Saves each master trace without renaming it.
-# Copies each trace into the separate log folder with a timestamp.
+# Copies each existing trace file into the log folder with a timestamp.
+# Does NOT rename the master trace files.
+# Does NOT show a Save popup.
 
 import os
 import shutil
@@ -58,11 +59,8 @@ print("ALL 6 TRACERS STOPPED")
 
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-# SAVE ORIGINALS + CREATE COPIES
+# COPY EACH MASTER TRACE FILE
 for doc in trace_docs:
-
-    # Save original trace without changing its filename
-    doc.Save()
 
     filename = os.path.join(
         log_folder,
@@ -72,7 +70,6 @@ for doc in trace_docs:
         )
     )
 
-    # Copy saved trace to log folder
     shutil.copy2(doc.FullName, filename)
 
     print("Saved copy:", filename)
