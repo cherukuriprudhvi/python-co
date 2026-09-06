@@ -1,55 +1,33 @@
+import os
+from datetime import datetime
 
+log_folder = r"C:\Users\pcherupr\OneDrive - Clarios\Documents\PCAN-Explorer 7\PCAN-Testing\Logs"
 
-# FILE DESCRIPTION:
-# Runs the short mode sequence on CAN1-CAN6 together.
+os.makedirs(log_folder, exist_ok=True)
 
-targets = []
+traceDoc = App.ActiveDocument
+tracer = traceDoc.Tracer
 
-for msg in App.TransmitMessages:
-    if msg.ID == 0x213 and msg.Connection.Name in [
-        "CAN1", "CAN2", "CAN3", "CAN4", "CAN5", "CAN6"
-    ]:
-        targets.append(msg)
+print("AUTO TRACE TEST STARTED")
 
-# OFF
-for msg in targets:
-    msg.SetSignalValue("EMduleMde_D_Rq3", 0)
-print("ALL 6 -> OFF")
-App.Wait(5000)
+for i in range(1, 4):
 
-# STANDBY
-for msg in targets:
-    msg.SetSignalValue("EMduleMde_D_Rq3", 1)
-print("ALL 6 -> STANDBY")
-App.Wait(5000)
+    tracer.Start()
+    print("Recording test", i)
 
-# FLOAT
-for msg in targets:
-    msg.SetSignalValue("EMduleMde_D_Rq3", 3)
-print("ALL 6 -> FLOAT")
-App.Wait(5000)
+    App.Wait(10000)   # 10 seconds only for test
 
-# OPEN
-for msg in targets:
-    msg.SetSignalValue("IsolSwtch_B_Cmd3", 0)
-print("ALL 6 Isolation -> OPEN")
-App.Wait(2000)
+    tracer.Stop()
 
-# CLOSE
-for msg in targets:
-    msg.SetSignalValue("IsolSwtch_B_Cmd3", 1)
-print("ALL 6 Isolation -> CLOSE")
-App.Wait(2000)
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    filename = os.path.join(
+        log_folder,
+        "Trace_Test_{}_{}.trc".format(i, timestamp)
+    )
 
-# FLOAT -> STANDBY
-for msg in targets:
-    msg.SetSignalValue("EMduleMde_D_Rq3", 1)
-print("ALL 6 -> STANDBY")
-App.Wait(5000)
+    traceDoc.Save(filename)
 
-# STANDBY -> OFF
-for msg in targets:
-    msg.SetSignalValue("EMduleMde_D_Rq3", 0)
-print("ALL 6 -> OFF")
+    print("Saved:", filename)
 
-print("ALL 6 TEST FINISHED")
+print("AUTO TRACE TEST FINISHED")
+
