@@ -4,9 +4,8 @@
 # Starts CAN1-CAN6 separate trace files.
 # Records for 10 seconds.
 # Stops all six tracers.
-# Saves each master trace in place.
+# Saves each master trace without renaming it.
 # Copies each trace into the separate log folder with a timestamp.
-# Keeps the original CAN_1_FILTER.trc ... CAN_6_FILTER.trc names unchanged.
 
 import os
 import shutil
@@ -38,18 +37,20 @@ for doc in App.Documents:
 print("FOUND", len(trace_docs), "TRACE FILES")
 
 if len(trace_docs) != 6:
-    raise Exception("Expected 6 trace files, found {}".format(len(trace_docs)))
+    raise Exception(
+        "Expected 6 trace files, found {}".format(len(trace_docs))
+    )
 
-# Start all 6
+# START ALL 6
 for doc in trace_docs:
     doc.Tracer.Start()
 
 print("ALL 6 TRACERS STARTED")
 
-# Record for 10 seconds
+# RECORD FOR 10 SECONDS
 App.Wait(10000)
 
-# Stop all 6
+# STOP ALL 6
 for doc in trace_docs:
     doc.Tracer.Stop()
 
@@ -57,10 +58,10 @@ print("ALL 6 TRACERS STOPPED")
 
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-# Save masters and create timestamped copies
+# SAVE ORIGINALS + CREATE COPIES
 for doc in trace_docs:
 
-    # Save original master trace without renaming it
+    # Save original trace without changing its filename
     doc.Save()
 
     filename = os.path.join(
@@ -71,7 +72,7 @@ for doc in trace_docs:
         )
     )
 
-    # Copy the saved master trace into the log folder
+    # Copy saved trace to log folder
     shutil.copy2(doc.FullName, filename)
 
     print("Saved copy:", filename)
