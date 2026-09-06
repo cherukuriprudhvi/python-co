@@ -2,11 +2,11 @@
 
 # FILE DESCRIPTION:
 # Starts CAN1-CAN6 separate trace files.
-# Records for 10 seconds.
+# Records continuously for 6 hours.
 # Stops all six tracers.
-# Copies each existing trace file into the log folder with a timestamp.
-# Does NOT rename the master trace files.
-# Does NOT show a Save popup.
+# Creates six separate timestamped trace copies.
+# Does not rename the original CAN_1_FILTER.trc ... CAN_6_FILTER.trc files.
+# Does not change BMS modes.
 
 import os
 import shutil
@@ -42,16 +42,16 @@ if len(trace_docs) != 6:
         "Expected 6 trace files, found {}".format(len(trace_docs))
     )
 
-# START ALL 6
+# START ALL 6 TRACERS
 for doc in trace_docs:
     doc.Tracer.Start()
 
 print("ALL 6 TRACERS STARTED")
 
-# RECORD FOR 10 SECONDS
-App.Wait(10000)
+# RECORD FOR 6 HOURS
+App.Wait(6 * 60 * 60 * 1000)
 
-# STOP ALL 6
+# STOP ALL 6 TRACERS
 for doc in trace_docs:
     doc.Tracer.Stop()
 
@@ -59,12 +59,12 @@ print("ALL 6 TRACERS STOPPED")
 
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-# COPY EACH MASTER TRACE FILE
+# CREATE SIX SEPARATE TIMESTAMPED COPIES
 for doc in trace_docs:
 
     filename = os.path.join(
         log_folder,
-        "{}_TEST_{}.trc".format(
+        "{}_6H_{}.trc".format(
             os.path.splitext(doc.Name)[0],
             timestamp
         )
@@ -74,4 +74,4 @@ for doc in trace_docs:
 
     print("Saved copy:", filename)
 
-print("ALL 6 SEPARATE TRACE TEST FINISHED")
+print("6-HOUR SEPARATE TRACE LOGGING FINISHED")
