@@ -1,6 +1,4 @@
 
-
-
 traceDoc = None
 tracer = None
 
