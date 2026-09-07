@@ -1,11 +1,12 @@
 
 
-# TEST - CREATE ONE PCAN PLOTTER
+plotDoc = App.ActiveDocument
+plotObj = plotDoc.Object
 
-doc = App.Documents.Add(peDocumentKindPlotter)
+print("DOC:", plotDoc.Name)
+print("OBJECT:", plotObj)
 
-if doc is None:
-    print("PLOT CREATION FAILED")
-else:
-    print("PLOT CREATED SUCCESSFULLY")
-    print("Document:", doc.Name)
+try:
+    print("OBJECT KIND:", plotObj.ObjectKind)
+except Exception as e:
+    print("NO OBJECT KIND:", e)
