@@ -1,7 +1,7 @@
 
 
-for doc in App.Documents:
+for win in App.Windows:
     try:
-        print(doc.Name, " | KIND:", doc.Kind, " | OBJECT:", doc.Object)
+        print(win.Caption, "| KIND:", win.Kind, "| OBJECT:", win.Object)
     except Exception as e:
-        print(doc.Name, " | ERROR:", e)
+        print("WINDOW ERROR:", e)
