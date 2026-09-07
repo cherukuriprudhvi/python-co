@@ -2,11 +2,11 @@
 
 Option Explicit
 
-Sub TEST_ACTIVE_PLOT_ONLY()
+Sub TEST_PLOT13_ONLY()
 
     Dim doc, plotter
 
-    Set doc = ActiveDocument
+    Set doc = Documents.Item("Plot13.plt")
     Set plotter = doc.ActiveWindow.Object
 
     plotter.YAxes(1).Min = -10
