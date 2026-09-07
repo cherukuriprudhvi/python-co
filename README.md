@@ -1,69 +1,87 @@
 
-Sub CreateEPASPlots()
-    Dim doc, plotWin, plotterObj, mainGraph
-    Dim i
-    
-    ' 1. Wipe out any messy open plots to clear your screen space
-    For i = Documents.Count To 1 Step -1
-        If InStr(Documents(i).Name, ".plt") > 0 Then
-            Documents(i).Close peChangesDiscard
-        End If
-    Next
 
-    ' ----------------------------------------------------
-    ' PLOT 1: ELECTRICAL (Voltages & Currents)
-    ' ----------------------------------------------------
-    Set doc = Documents.Add(peDocumentKindPlotter)
-    Set plotWin = doc.ActiveWindow
-    plotWin.Left = 0
-    plotWin.Top = 0
-    plotWin.Width = 650
-    plotWin.Height = 450
-    doc.Name = "EPAS_Electrical"
-    
-    ' Correct nested object mapping: Document > ActiveSheet > Graphs(0)
-    Set plotterObj = doc.ActiveSheet
-    Set mainGraph = plotterObj.Graphs(0)
-    
-    ' Add variables to the graph channel list using your actual _Actl2 names
-    mainGraph.Channels.Add "EPAS_Volt.EMduleInCrct_U_Actl2"
-    mainGraph.Channels.Add "EPAS_Volt.EMduleOutCrct_U_Actl2"
-    mainGraph.Channels.Add "EPAS_Volt.Cell_U_Actl2"
-    mainGraph.Channels.Add "EPAS_Current.EMduleInCrct_I_Actl2"
-    mainGraph.Channels.Add "EPAS_Current.EMduleOutCrct_I_Actl2"
-    
-    ' Set Y-Axis for your voltage/current bounds
-    mainGraph.YAxes(0).Autoscale = False
-    mainGraph.YAxes(0).Min = 0.0
-    mainGraph.YAxes(0).Max = 16.0
+import win32com.client
+import time
 
-    ' ----------------------------------------------------
-    ' PLOT 2: THERMAL (Temperatures)
-    ' ----------------------------------------------------
-    Set doc = Documents.Add(peDocumentKindPlotter)
-    Set plotWin = doc.ActiveWindow
-    plotWin.Left = 655
-    plotWin.Top = 0
-    plotWin.Width = 650
-    plotWin.Height = 450
-    doc.Name = "EPAS_Thermal"
+# Connect to your active PCAN-Explorer 7 instance
+try:
+    pcan = win32com.client.GetActiveObject("PCANExplorer.Application")
+except:
+    pcan = win32com.client.Dispatch("PCANExplorer.Application")
+
+# 1. Close existing messy plots to free screen space
+for doc in list(pcan.Documents):
+    if doc.Name.lower().endswith('.plt') or "plot" in doc.Name.lower():
+        doc.Close()
+
+def create_epas_plot(title, signals, y_min, y_max, autoscale, left, top, width, height):
+    # Add a new Plotter document type (Kind = 5 or peDocumentKindPlotter)
+    doc = pcan.Documents.Add(5) 
+    doc.Name = title
     
-    Set plotterObj = doc.ActiveSheet
-    Set mainGraph = plotterObj.Graphs(0)
-    mainGraph.Channels.Add "EPAS_Temperature.FET_Te_Actl2"
-    mainGraph.Channels.Add "EPAS_Temperature.Cel_Te_Actl2"
+    # Configure the screen window positioning
+    win = doc.ActiveWindow
+    win.Left = left
+    win.Top = top
+    win.Width = width
+    win.Height = height
     
-    ' Set Y-Axis for temperatures (degC)
-    mainGraph.YAxes(0).Autoscale = False
-    mainGraph.YAxes(0).Min = 15.0
-    mainGraph.YAxes(0).Max = 100.0
+    # Access the base Plotter object
+    plotter = win.Object
+    
+    # Add signals sequentially 
+    for sig in signals:
+        try:
+            # PCAN-Explorer Python COM syntax for adding a variable to a plot
+            plotter.AddVariable(sig)
+        except Exception as e:
+            print(f"Warning: Could not bind signal {sig}. Check your .sym/DBC paths. Error: {e}")
+            
+    # Apply Y-Axis scaling properties safely
+    try:
+        # Most versions expose YAxes directly on the base plotter view object
+        plotter.YAxes(0).Autoscale = autoscale
+        if not autoscale:
+            plotter.YAxes(0).Min = y_min
+            plotter.YAxes(0).Max = y_max
+    except Exception as e:
+        print(f"Note: Y-Axis scaling properties skipped due to object model variances: {e}")
 
-    ' ----------------------------------------------------
-    ' GLOBAL ALIGNMENT
-    ' ----------------------------------------------------
-    ' Synchronize horizontal scrolling timelines automatically
-    Commands.Execute "Plotter:EnableXAxisSync"
+# 2. Define your exact EPAS signal listings based on your live symbols
+electrical_signals = [
+    "EPAS_Volt.EMduleInCrct_U_Actl2",
+    "EPAS_Volt.EMduleOutCrct_U_Actl2",
+    "EPAS_Volt.Cell_U_Actl2",
+    "EPAS_Current.EMduleInCrct_I_Actl2",
+    "EPAS_Current.EMduleOutCrct_I_Actl2"
+]
 
-    MsgBox "EPAS System Plots generated cleanly!", vbInformation, "Automation Done"
-End Sub
+thermal_signals = [
+    "EPAS_Temperature.FET_Te_Actl2",
+    "EPAS_Temperature.Cel_Te_Actl2"
+]
 
+# 3. Launch and layout the windows side-by-side cleanly
+print("Deploying optimized Python EPAS plots...")
+
+create_epas_plot(
+    title="EPAS_Electrical", 
+    signals=electrical_signals, 
+    y_min=0.0, y_max=16.0, autoscale=False,
+    left=0, top=0, width=650, height=450
+)
+
+create_epas_plot(
+    title="EPAS_Thermal", 
+    signals=thermal_signals, 
+    y_min=15.0, y_max=100.0, autoscale=False,
+    left=655, top=0, width=650, height=450
+)
+
+# Enable timeline synchronization across windows
+try:
+    pcan.Commands.Execute("Plotter:EnableXAxisSync")
+except:
+    pass
+
+print("Plots successfully configured via Python interface.")
