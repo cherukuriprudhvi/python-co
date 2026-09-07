@@ -2,13 +2,17 @@
 
 Option Explicit
 
-Sub TEST_EXISTING_PLOT_ONLY()
+Sub TEST_ACTIVE_PLOT_ONLY()
 
     Dim doc, plotter
 
-    Set doc = Documents.Item("Plot12.plt")
-    Set plotter = doc.ActiveWindow.Object
+    Set doc = ActiveDocument
 
-    plotter.Title = "EPAS TEST"
+    If doc.Kind = peDocumentKindPlotter Then
+
+        Set plotter = doc.ActiveWindow.Object
+        plotter.Title = "EPAS TEST"
+
+    End If
 
 End Sub
