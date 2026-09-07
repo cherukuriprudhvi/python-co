@@ -1,4 +1,5 @@
 
+
 Option Explicit
 
 Sub TEST_ACTIVE_PLOT_ONLY()
@@ -8,6 +9,6 @@ Sub TEST_ACTIVE_PLOT_ONLY()
     Set doc = ActiveDocument
     Set plotter = doc.ActiveWindow.Object
 
-    plotter.Title = "EPAS TEST"
+    plotter.YAxes(1).Min = -10
 
 End Sub
