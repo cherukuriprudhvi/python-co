@@ -1,14 +1,14 @@
 
 
 
-Sub CreateOptimizedBMSPlots()
+Sub CreateEPASPlots()
     Dim app
     Dim doc, plotWin, plotterObj
     Dim i
     
     Set app = CreateObject("PCANExplorer.Application")
     
-    ' 1. Clear out any old open Plot files to reclaim screen space
+    ' 1. Wipe out any messy open plots to clear your screen space
     For i = app.Documents.Count To 1 Step -1
         If InStr(app.Documents(i).Name, ".plt") > 0 Then
             app.Documents(i).Close peChangesDiscard
@@ -16,69 +16,73 @@ Sub CreateOptimizedBMSPlots()
     Next
 
     ' ----------------------------------------------------
-    ' PLOT 1: CELL VOLTAGES (High Resolution Zoom)
+    ' PLOT 1: ELECTRICAL (Voltages & Currents)
     ' ----------------------------------------------------
     Set doc = app.Documents.Add(peDocumentKindPlotter)
     Set plotWin = doc.ActiveWindow
-    
-    ' Position Window (Left, Top, Width, Height)
     plotWin.Left = 0
     plotWin.Top = 0
-    plotWin.Width = 600
+    plotWin.Width = 650
     plotWin.Height = 450
-    doc.Name = "Cell_Voltages"
+    doc.Name = "EPAS_Electrical"
     
     Set plotterObj = plotWin.Object
-    ' Add your specific BMS voltage signals here
-    plotterObj.Channels.AddVariable "BMS_Pack.Cell_Max_Volt"
-    plotterObj.Channels.AddVariable "BMS_Pack.Cell_Min_Volt"
+    plotterObj.Channels.AddVariable "EPAS_Volt.EMduleInCrct_U_Act3"
+    plotterObj.Channels.AddVariable "EPAS_Volt.EMduleOutCrct_U_Act3"
+    plotterObj.Channels.AddVariable "EPAS_Volt.Cell_U_Act3"
+    plotterObj.Channels.AddVariable "EPAS_Current.EMduleInCrct_I_Act3"
+    plotterObj.Channels.AddVariable "EPAS_Current.EMduleOutCrct_I_Act3"
     
-    ' Enforce strict Y-Axis limits for BMS cells (3.0V to 4.2V)
-    plotterObj.YAxes(0).Autoscale = False
-    plotterObj.YAxes(0).Min = 3.0
-    plotterObj.YAxes(0).Max = 4.2
-
-    ' ----------------------------------------------------
-    ' PLOT 2: THERMAL PROFILE (Slow Dynamics)
-    ' ----------------------------------------------------
-    Set doc = app.Documents.Add(peDocumentKindPlotter)
-    Set plotWin = doc.ActiveWindow
-    
-    ' Place it right next to Plot 1
-    plotWin.Left = 605
-    plotWin.Top = 0
-    plotWin.Width = 600
-    plotWin.Height = 450
-    doc.Name = "BMS_Temperatures"
-    
-    Set plotterObj = plotWin.Object
-    plotterObj.Channels.AddVariable "BMS_Thermal.Module1_Temp"
-    plotterObj.Channels.AddVariable "BMS_Thermal.Module2_Temp"
-    
-    ' Set temperature limits (e.g., 0°C to 80°C)
+    ' Set Y-Axis for 12V electrical bounds
     plotterObj.YAxes(0).Autoscale = False
     plotterObj.YAxes(0).Min = 0.0
-    plotterObj.YAxes(0).Max = 80.0
+    plotterObj.YAxes(0).Max = 16.0
 
     ' ----------------------------------------------------
-    ' PLOT 3: PACK POWER & CURRENT (Dynamic Control)
+    ' PLOT 2: CONTROL STATES (Modes & Switches)
     ' ----------------------------------------------------
     Set doc = app.Documents.Add(peDocumentKindPlotter)
     Set plotWin = doc.ActiveWindow
-    
-    ' Place it below or on your second monitor screen space
-    plotWin.Left = 0
-    plotWin.Top = 455
-    plotWin.Width = 1205
+    plotWin.Left = 655
+    plotWin.Top = 0
+    plotWin.Width = 650
     plotWin.Height = 450
-    doc.Name = "Power_and_Current"
+    doc.Name = "EPAS_Control_States"
     
     Set plotterObj = plotWin.Object
-    plotterObj.Channels.AddVariable "BMS_Control.Pack_Current"
-    plotterObj.Channels.AddVariable "BMS_Control.State_Of_Charge"
+    plotterObj.Channels.AddVariable "EPAS_SSR_Mode.EMdule_O_Stat3"
+    plotterObj.Channels.AddVariable "EPAS_SSR_Mode.EMduleMde_D_Rq3"
+    plotterObj.Channels.AddVariable "EPAS_PID.IsolSwtch_B_Cmd3"
+    plotterObj.Channels.AddVariable "EPAS_PID.IsolSwtch_B_Stat3"
     
-    ' Enable X-Axis Sync across all plots so timelines match perfectly
+    ' Let state enums auto-scale their discrete steps
+    plotterObj.YAxes(0).Autoscale = True
+
+    ' ----------------------------------------------------
+    ' PLOT 3: THERMAL (Temperatures)
+    ' ----------------------------------------------------
+    Set doc = app.Documents.Add(peDocumentKindPlotter)
+    Set plotWin = doc.ActiveWindow
+    plotWin.Left = 0
+    plotWin.Top = 455
+    plotWin.Width = 1305
+    plotWin.Height = 450
+    doc.Name = "EPAS_Thermal"
+    
+    Set plotterObj = plotWin.Object
+    plotterObj.Channels.AddVariable "EPAS_Temperature.FET_Te_Act3"
+    plotterObj.Channels.AddVariable "EPAS_Temperature.Cel_Te_Act3"
+    
+    ' Set Y-Axis for standard operating temperatures (degC)
+    plotterObj.YAxes(0).Autoscale = False
+    plotterObj.YAxes(0).Min = 15.0
+    plotterObj.YAxes(0).Max = 100.0
+
+    ' ----------------------------------------------------
+    ' GLOBAL ALIGNMENT
+    ' ----------------------------------------------------
+    ' Sync the timelines horizontally so scrolling matches perfectly
     app.Commands.Execute "Plotter:EnableXAxisSync"
 
-    MsgBox "BMS Plots generated and scaled successfully!", vbInformation, "Task Complete"
+    MsgBox "EPAS System Plots generated cleanly!", vbInformation, "Automation Done"
 End Sub
