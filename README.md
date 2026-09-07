@@ -1,9 +1,8 @@
 
 
-doc = App.Documents.Add(peDocumentKindPlotter)
+doc = App.ActiveDocument
 plotter = doc.ActiveWindow.Object
 
 channel = plotter.Channels.Add()
-channel.Signal = App.Signals("EMduleInCrct_U_Actl3")
 
-print("ONE SIGNAL ADDED")
+print("CHANNEL CREATED")
