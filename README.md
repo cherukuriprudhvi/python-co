@@ -2,16 +2,25 @@
 
 Option Explicit
 
-Sub FIND_EPAS_SIGNAL()
+Sub TEST_CAN1_CAN2_BINDING()
 
-    Dim sig
+    Dim doc, plotter
+    Dim ch1, ch2
+    Dim axVolt
 
-    For Each sig In Signals
+    Set doc = Documents.Item("Plot13.plt")
+    Set plotter = doc.ActiveWindow.Object
 
-        If sig.ShortName = "EMduleInCirct_U_Actl3" Then
-            PrintToOutputWindow sig.Name
-        End If
+    Set axVolt = plotter.YAxes(1)
 
-    Next
+    Set ch1 = plotter.Channels.Add()
+    Set ch1.Signal = Signals("DBC-1.EnergyMgmtSteeringData_2.EMduleInCirct_U_Actl3")
+    Set ch1.YAxis = axVolt
+    ch1.Title = "CAN1_InVoltage"
+
+    Set ch2 = plotter.Channels.Add()
+    Set ch2.Signal = Signals("DBC-2.EnergyMgmtSteeringData_2.EMduleInCirct_U_Actl3")
+    Set ch2.YAxis = axVolt
+    ch2.Title = "CAN2_InVoltage"
 
 End Sub
