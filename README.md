@@ -1,8 +1,13 @@
 
 
-doc = App.ActiveDocument
-plotter = doc.ActiveWindow.Object
+Sub SignalExample()
 
-channel = plotter.Channels.Add()
+    Dim doc, plotter, ch
 
-print("CHANNEL CREATED")
+    Set doc = ActiveDocument
+    Set plotter = doc.ActiveWindow.Object
+
+    Set ch = plotter.Channels.Add
+    Set ch.Signal = Signals("EMduleInCrct_U_Actl3")
+
+End Sub
