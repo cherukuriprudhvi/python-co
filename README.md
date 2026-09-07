@@ -1,6 +1,7 @@
+
 Option Explicit
 
-Sub BUILD_EPAS_CAN1_CAN2()
+Sub ADD_EPAS_CAN3_TO_CAN6()
 
     Dim doc, plotter
     Dim axVolt, axCurr, axMode, axIso, axTemp
@@ -8,102 +9,49 @@ Sub BUILD_EPAS_CAN1_CAN2()
     Set doc = Documents.Item("Plot11.plt")
     Set plotter = doc.ActiveWindow.Object
 
-    '==============================
-    ' 5 Y-AXES
-    '==============================
-
-    'Reuse default Y-axis
+    'Use the existing 5 axes
     Set axVolt = plotter.YAxes(1)
-    axVolt.Title = "EPAS_Voltage"
-    axVolt.Min = 0
-    axVolt.Max = 20
+    Set axCurr = plotter.YAxes(2)
+    Set axMode = plotter.YAxes(3)
+    Set axIso  = plotter.YAxes(4)
+    Set axTemp = plotter.YAxes(5)
 
-    Set axCurr = plotter.YAxes.Add()
-    axCurr.Title = "EPAS_Current"
-    axCurr.Min = -50
-    axCurr.Max = 50
+    'CAN3
+    AddOneCAN plotter, "DBC-3.", "CAN3", axVolt, axCurr, axMode, axIso, axTemp
 
-    Set axMode = plotter.YAxes.Add()
-    axMode.Title = "EPAS_Mode"
-    axMode.Min = 0
-    axMode.Max = 10
+    'CAN4
+    AddOneCAN plotter, "DBC-4.", "CAN4", axVolt, axCurr, axMode, axIso, axTemp
 
-    Set axIso = plotter.YAxes.Add()
-    axIso.Title = "EPAS_Isolation"
-    axIso.Min = 0
-    axIso.Max = 10
+    'CAN5
+    AddOneCAN plotter, "DBC-5.", "CAN5", axVolt, axCurr, axMode, axIso, axTemp
 
-    Set axTemp = plotter.YAxes.Add()
-    axTemp.Title = "EPAS_Temperature"
-    axTemp.Min = -40
-    axTemp.Max = 120
-
-
-    '==============================
-    ' CAN1 / DBC-1
-    '==============================
-
-    BindFirst plotter, "DBC-1.", "EMduleInCirct_U_Actl3", axVolt, "CAN1_InVolt"
-
-    BindNew plotter, "DBC-1.", "EMduleOutCirct_U_Actl3", axVolt, "CAN1_OutVolt"
-    BindNew plotter, "DBC-1.", "Cell_U_Actl3", axVolt, "CAN1_CellVolt"
-
-    BindNew plotter, "DBC-1.", "EMduleInCirct_I_Actl3", axCurr, "CAN1_InCurrent"
-    BindNew plotter, "DBC-1.", "EMduleOutCirct_I_Actl3", axCurr, "CAN1_OutCurrent"
-
-    BindNew plotter, "DBC-1.", "EMdule_D_Stat3", axMode, "CAN1_Status"
-    BindNew plotter, "DBC-1.", "EMduleMde_D_Rq3", axMode, "CAN1_ModeReq"
-
-    BindNew plotter, "DBC-1.", "IsolSwtch_B_Cmd3", axIso, "CAN1_IsolCmd"
-    BindNew plotter, "DBC-1.", "IsolSwtch_B_Stat3", axIso, "CAN1_IsolStat"
-
-    BindNew plotter, "DBC-1.", "FET_Te_Actl3", axTemp, "CAN1_FETTemp"
-    BindNew plotter, "DBC-1.", "Cell_Te_Actl3", axTemp, "CAN1_CellTemp"
-
-
-    '==============================
-    ' CAN2 / DBC-2
-    '==============================
-
-    BindNew plotter, "DBC-2.", "EMduleInCirct_U_Actl3", axVolt, "CAN2_InVolt"
-    BindNew plotter, "DBC-2.", "EMduleOutCirct_U_Actl3", axVolt, "CAN2_OutVolt"
-    BindNew plotter, "DBC-2.", "Cell_U_Actl3", axVolt, "CAN2_CellVolt"
-
-    BindNew plotter, "DBC-2.", "EMduleInCirct_I_Actl3", axCurr, "CAN2_InCurrent"
-    BindNew plotter, "DBC-2.", "EMduleOutCirct_I_Actl3", axCurr, "CAN2_OutCurrent"
-
-    BindNew plotter, "DBC-2.", "EMdule_D_Stat3", axMode, "CAN2_Status"
-    BindNew plotter, "DBC-2.", "EMduleMde_D_Rq3", axMode, "CAN2_ModeReq"
-
-    BindNew plotter, "DBC-2.", "IsolSwtch_B_Cmd3", axIso, "CAN2_IsolCmd"
-    BindNew plotter, "DBC-2.", "IsolSwtch_B_Stat3", axIso, "CAN2_IsolStat"
-
-    BindNew plotter, "DBC-2.", "FET_Te_Actl3", axTemp, "CAN2_FETTemp"
-    BindNew plotter, "DBC-2.", "Cell_Te_Actl3", axTemp, "CAN2_CellTemp"
+    'CAN6
+    AddOneCAN plotter, "DBC-6.", "CAN6", axVolt, axCurr, axMode, axIso, axTemp
 
 End Sub
 
 
-'=================================================
-' USE DEFAULT CHANNEL 1
-'=================================================
-Sub BindFirst(plotter, dbPrefix, shortName, yAxis, title)
+Sub AddOneCAN(plotter, dbPrefix, canName, axVolt, axCurr, axMode, axIso, axTemp)
 
-    Dim ch, sig
+    BindNew plotter, dbPrefix, "EMduleInCirct_U_Actl3",  axVolt, canName & "_InVolt"
+    BindNew plotter, dbPrefix, "EMduleOutCirct_U_Actl3", axVolt, canName & "_OutVolt"
+    BindNew plotter, dbPrefix, "Cell_U_Actl3",            axVolt, canName & "_CellVolt"
 
-    Set sig = FindSignal(dbPrefix, shortName)
+    BindNew plotter, dbPrefix, "EMduleInCirct_I_Actl3",  axCurr, canName & "_InCurrent"
+    BindNew plotter, dbPrefix, "EMduleOutCirct_I_Actl3", axCurr, canName & "_OutCurrent"
 
-    Set ch = plotter.Channels(1)
-    Set ch.Signal = sig
-    Set ch.YAxis = yAxis
-    ch.Title = title
+    BindNew plotter, dbPrefix, "EMdule_D_Stat3",          axMode, canName & "_Status"
+    BindNew plotter, dbPrefix, "EMduleMde_D_Rq3",        axMode, canName & "_ModeReq"
+
+    BindNew plotter, dbPrefix, "IsolSwtch_B_Cmd3",       axIso, canName & "_IsolCmd"
+    BindNew plotter, dbPrefix, "IsolSwtch_B_Stat3",      axIso, canName & "_IsolStat"
+
+    BindNew plotter, dbPrefix, "FET_Te_Actl3",           axTemp, canName & "_FETTemp"
+    BindNew plotter, dbPrefix, "Cell_Te_Actl3",          axTemp, canName & "_CellTemp"
 
 End Sub
 
 
-'=================================================
-' ADD NEXT CHANNEL
-'=================================================
 Sub BindNew(plotter, dbPrefix, shortName, yAxis, title)
 
     Dim ch, sig
@@ -118,9 +66,6 @@ Sub BindNew(plotter, dbPrefix, shortName, yAxis, title)
 End Sub
 
 
-'=================================================
-' FIND SIGNAL FROM CORRECT DBC
-'=================================================
 Function FindSignal(dbPrefix, shortName)
 
     Dim sig
