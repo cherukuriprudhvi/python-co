@@ -1,50 +1,83 @@
 
-
-
 Option Explicit
 
-Sub Create_CAN1_EPAS_Plot()
+Sub Create_CAN1_EPAS_Grouped()
 
     Dim doc, plotter
-    Dim ch, yAxis
-    Dim sigs, i
+    Dim axVolt, axCurr, axMode, axIso, axTemp
+    Dim ch
 
-    'Create a new Plotter
     Set doc = Documents.Add(peDocumentKindPlotter)
     Set plotter = doc.ActiveWindow.Object
 
-    'CAN1 EPAS signals
-    sigs = Array( _
-        "EMduleInCirct_U_Actl3", _
-        "EMduleOutCirct_U_Actl3", _
-        "Cell_U_Actl3", _
-        "EMduleInCirct_I_Actl3", _
-        "EMduleOutCirct_LActl3", _
-        "EMdule_D_Stat3", _
-        "EMduleMde_D_Rq3", _
-        "IsolSwtch_B_Cmd3", _
-        "IsolSwtch_BStat3", _
-        "FET_Te_Act3", _
-        "Cell_Te_Actl3" _
-    )
+    'Create 5 grouped Y-axes
+    Set axVolt = plotter.YAxes.Add()
+    axVolt.Title = "EPAS_Volt"
 
-    For i = 0 To UBound(sigs)
+    Set axCurr = plotter.YAxes.Add()
+    axCurr.Title = "EPAS_Current"
 
-        'Create separate Y-axis
-        Set yAxis = plotter.YAxes.Add()
+    Set axMode = plotter.YAxes.Add()
+    axMode.Title = "EPAS_SSR_Mode"
 
-        'Create channel
-        Set ch = plotter.Channels.Add()
+    Set axIso = plotter.YAxes.Add()
+    axIso.Title = "EPAS_PID"
 
-        'Bind signal
-        Set ch.Signal = Signals(sigs(i))
+    Set axTemp = plotter.YAxes.Add()
+    axTemp.Title = "EPAS_Temperature"
 
-        'Put this signal on its own Y-axis
-        Set ch.YAxis = yAxis
 
-        'Show signal name
-        ch.Title = sigs(i)
+    'Voltage
+    Set ch = plotter.Channels.Add()
+    Set ch.Signal = Signals("EMduleInCirct_U_Actl3")
+    Set ch.YAxis = axVolt
 
-    Next
+    Set ch = plotter.Channels.Add()
+    Set ch.Signal = Signals("EMduleOutCirct_U_Actl3")
+    Set ch.YAxis = axVolt
+
+    Set ch = plotter.Channels.Add()
+    Set ch.Signal = Signals("Cell_U_Actl3")
+    Set ch.YAxis = axVolt
+
+
+    'Current
+    Set ch = plotter.Channels.Add()
+    Set ch.Signal = Signals("EMduleInCirct_I_Actl3")
+    Set ch.YAxis = axCurr
+
+    Set ch = plotter.Channels.Add()
+    Set ch.Signal = Signals("EMduleOutCirct_LActl3")
+    Set ch.YAxis = axCurr
+
+
+    'Mode / Status
+    Set ch = plotter.Channels.Add()
+    Set ch.Signal = Signals("EMdule_D_Stat3")
+    Set ch.YAxis = axMode
+
+    Set ch = plotter.Channels.Add()
+    Set ch.Signal = Signals("EMduleMde_D_Rq3")
+    Set ch.YAxis = axMode
+
+
+    'Isolation
+    Set ch = plotter.Channels.Add()
+    Set ch.Signal = Signals("IsolSwtch_B_Cmd3")
+    Set ch.YAxis = axIso
+
+    Set ch = plotter.Channels.Add()
+    Set ch.Signal = Signals("IsolSwtch_BStat3")
+    Set ch.YAxis = axIso
+
+
+    'Temperature
+    Set ch = plotter.Channels.Add()
+    Set ch.Signal = Signals("FET_Te_Act3")
+    Set ch.YAxis = axTemp
+
+    Set ch = plotter.Channels.Add()
+    Set ch.Signal = Signals("Cell_Te_Actl3")
+    Set ch.YAxis = axTemp
 
 End Sub
