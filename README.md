@@ -2,18 +2,14 @@
 
 Option Explicit
 
-Sub FIND_ALL_SIGNAL_SOURCES()
+Sub FIND_EPAS_SIGNAL()
 
-    Dim sig, src
+    Dim sig
 
     For Each sig In Signals
 
-        Set src = sig.Source
-
-        If Not (src Is Nothing) Then
-            PrintToOutputWindow sig.Name & " --> " & src.QualifiedName
-        Else
-            PrintToOutputWindow sig.Name & " --> NO SOURCE"
+        If sig.ShortName = "EMduleInCirct_U_Actl3" Then
+            PrintToOutputWindow sig.Name
         End If
 
     Next
