@@ -1,11 +1,15 @@
 
-
-
 # PCAN-Explorer 7 Internal Python Macro
+import PCANExplorer
 
 def CreateEPASPlots():
     # 1. Close existing messy plots to free screen space
-    for doc in list(Documents):
+    # Convert the Documents collection to a list to iterate safely
+    doc_list = []
+    for i in range(PCANExplorer.Documents.Count):
+        doc_list.append(PCANExplorer.Documents.Item(i + 1))
+        
+    for doc in doc_list:
         if doc.Name.lower().endswith(".plt") or "plot" in doc.Name.lower():
             doc.Close()
 
@@ -25,7 +29,8 @@ def CreateEPASPlots():
 
     # Helper function to create and position each plot window
     def build_plot(title, signals, left, top, width, height):
-        doc = Documents.Add(5) # 5 = peDocumentKindPlotter
+        # 5 corresponds to peDocumentKindPlotter
+        doc = PCANExplorer.Documents.Add(5) 
         doc.Name = title
         
         win = doc.ActiveWindow
@@ -38,7 +43,7 @@ def CreateEPASPlots():
         
         for sig in signals:
             try:
-                # Add variable to the plotter view
+                # Add variable directly to the plotter scene view
                 plotter.AddVariable(sig)
             except Exception as e:
                 print("Could not bind signal: " + str(sig))
@@ -49,9 +54,10 @@ def CreateEPASPlots():
 
     # Enable timeline synchronization across windows
     try:
-        Commands.Execute("Plotter:EnableXAxisSync")
+        PCANExplorer.Commands.Execute("Plotter:EnableXAxisSync")
     except:
         pass
 
 # Execute the macro function directly
 CreateEPASPlots()
+
