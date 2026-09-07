@@ -1,24 +1,21 @@
 
 
-
 Sub CreateEPASPlots()
-    Dim app
     Dim doc, plotWin, plotterObj
     Dim i
     
-    Set app = CreateObject("PCANExplorer.Application")
-    
     ' 1. Wipe out any messy open plots to clear your screen space
-    For i = app.Documents.Count To 1 Step -1
-        If InStr(app.Documents(i).Name, ".plt") > 0 Then
-            app.Documents(i).Close peChangesDiscard
+    ' (Using the global Documents collection directly)
+    For i = Documents.Count To 1 Step -1
+        If InStr(Documents(i).Name, ".plt") > 0 Then
+            Documents(i).Close peChangesDiscard
         End If
     Next
 
     ' ----------------------------------------------------
     ' PLOT 1: ELECTRICAL (Voltages & Currents)
     ' ----------------------------------------------------
-    Set doc = app.Documents.Add(peDocumentKindPlotter)
+    Set doc = Documents.Add(peDocumentKindPlotter)
     Set plotWin = doc.ActiveWindow
     plotWin.Left = 0
     plotWin.Top = 0
@@ -41,7 +38,7 @@ Sub CreateEPASPlots()
     ' ----------------------------------------------------
     ' PLOT 2: CONTROL STATES (Modes & Switches)
     ' ----------------------------------------------------
-    Set doc = app.Documents.Add(peDocumentKindPlotter)
+    Set doc = Documents.Add(peDocumentKindPlotter)
     Set plotWin = doc.ActiveWindow
     plotWin.Left = 655
     plotWin.Top = 0
@@ -61,7 +58,7 @@ Sub CreateEPASPlots()
     ' ----------------------------------------------------
     ' PLOT 3: THERMAL (Temperatures)
     ' ----------------------------------------------------
-    Set doc = app.Documents.Add(peDocumentKindPlotter)
+    Set doc = Documents.Add(peDocumentKindPlotter)
     Set plotWin = doc.ActiveWindow
     plotWin.Left = 0
     plotWin.Top = 455
@@ -82,7 +79,7 @@ Sub CreateEPASPlots()
     ' GLOBAL ALIGNMENT
     ' ----------------------------------------------------
     ' Sync the timelines horizontally so scrolling matches perfectly
-    app.Commands.Execute "Plotter:EnableXAxisSync"
+    Commands.Execute "Plotter:EnableXAxisSync"
 
     MsgBox "EPAS System Plots generated cleanly!", vbInformation, "Automation Done"
 End Sub
