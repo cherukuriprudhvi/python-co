@@ -1,4 +1,5 @@
 
+
 Option Explicit
 
 Sub Create_CAN1_EPAS_Grouped()
@@ -10,10 +11,11 @@ Sub Create_CAN1_EPAS_Grouped()
     Set doc = Documents.Add(peDocumentKindPlotter)
     Set plotter = doc.ActiveWindow.Object
 
-    'Create 5 grouped Y-axes
-    Set axVolt = plotter.YAxes.Add()
+    'Reuse default Y-axis
+    Set axVolt = plotter.YAxes(1)
     axVolt.Title = "EPAS_Volt"
 
+    'Create only 4 more axes
     Set axCurr = plotter.YAxes.Add()
     axCurr.Title = "EPAS_Current"
 
@@ -26,12 +28,12 @@ Sub Create_CAN1_EPAS_Grouped()
     Set axTemp = plotter.YAxes.Add()
     axTemp.Title = "EPAS_Temperature"
 
-
-    'Voltage
-    Set ch = plotter.Channels.Add()
+    'Reuse default Channel 1 for first signal
+    Set ch = plotter.Channels(1)
     Set ch.Signal = Signals("EMduleInCirct_U_Actl3")
     Set ch.YAxis = axVolt
 
+    'Voltage
     Set ch = plotter.Channels.Add()
     Set ch.Signal = Signals("EMduleOutCirct_U_Actl3")
     Set ch.YAxis = axVolt
@@ -39,7 +41,6 @@ Sub Create_CAN1_EPAS_Grouped()
     Set ch = plotter.Channels.Add()
     Set ch.Signal = Signals("Cell_U_Actl3")
     Set ch.YAxis = axVolt
-
 
     'Current
     Set ch = plotter.Channels.Add()
@@ -50,8 +51,7 @@ Sub Create_CAN1_EPAS_Grouped()
     Set ch.Signal = Signals("EMduleOutCirct_LActl3")
     Set ch.YAxis = axCurr
 
-
-    'Mode / Status
+    'Mode
     Set ch = plotter.Channels.Add()
     Set ch.Signal = Signals("EMdule_D_Stat3")
     Set ch.YAxis = axMode
@@ -59,7 +59,6 @@ Sub Create_CAN1_EPAS_Grouped()
     Set ch = plotter.Channels.Add()
     Set ch.Signal = Signals("EMduleMde_D_Rq3")
     Set ch.YAxis = axMode
-
 
     'Isolation
     Set ch = plotter.Channels.Add()
@@ -69,7 +68,6 @@ Sub Create_CAN1_EPAS_Grouped()
     Set ch = plotter.Channels.Add()
     Set ch.Signal = Signals("IsolSwtch_BStat3")
     Set ch.YAxis = axIso
-
 
     'Temperature
     Set ch = plotter.Channels.Add()
