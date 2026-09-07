@@ -7,12 +7,8 @@ Sub TEST_ACTIVE_PLOT_ONLY()
     Dim doc, plotter
 
     Set doc = ActiveDocument
+    Set plotter = doc.ActiveWindow.Object
 
-    If doc.Kind = peDocumentKindPlotter Then
-
-        Set plotter = doc.ActiveWindow.Object
-        plotter.Title = "EPAS TEST"
-
-    End If
+    plotter.Title = "EPAS TEST"
 
 End Sub
