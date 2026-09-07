@@ -1,7 +1,9 @@
 
 
-for win in App.Windows:
-    try:
-        print(win.Caption, "| KIND:", win.Kind, "| OBJECT:", win.Object)
-    except Exception as e:
-        print("WINDOW ERROR:", e)
+doc = App.Documents.Add(peDocumentKindPlotter)
+plotter = doc.ActiveWindow.Object
+
+channel = plotter.Channels.Add()
+channel.Signal = Signals("EMduleInCrct_U_Actl3")
+
+print("ONE SIGNAL ADDED")
