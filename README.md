@@ -2,116 +2,106 @@
 
 Option Explicit
 
-Sub BUILD_EPAS_PLOT1_FINAL()
+Sub BUILD_48V_PLOT5()
 
     Dim doc, plotter
-    Dim axVolt, axCurr, axMode, axPID, axTemp
+    Dim axVolt, axCurr, axMode, axTemp
     Dim ch
 
-    Set doc = Documents.Item("Plot1_Final.plt")
+    Set doc = Documents.Item("Plot5.plt")
     Set plotter = doc.ActiveWindow.Object
 
-    '================================
-    ' 5 Y-AXES
-    '================================
+    '========================
+    ' 4 Y-AXES
+    '========================
 
     Set axVolt = plotter.YAxes(1)
-    axVolt.Title = "EPAS_Volt"
+    axVolt.Title = "48V_Voltage"
     axVolt.IsTitleVisible = True
 
     Set axCurr = plotter.YAxes.Add()
-    axCurr.Title = "EPAS_Current"
+    axCurr.Title = "48v_Current"
     axCurr.IsTitleVisible = True
 
     Set axMode = plotter.YAxes.Add()
-    axMode.Title = "EPAS_SSR_Mode"
+    axMode.Title = "48v_SSR_Mode"
     axMode.IsTitleVisible = True
 
-    Set axPID = plotter.YAxes.Add()
-    axPID.Title = "EPAS_PID"
-    axPID.IsTitleVisible = True
-
     Set axTemp = plotter.YAxes.Add()
-    axTemp.Title = "EPAS_Temperature"
+    axTemp.Title = "48v_Temperature"
     axTemp.IsTitleVisible = True
 
 
-    '================================
-    ' VOLTAGE
-    '================================
+    '========================
+    ' VOLTAGE - 3
+    '========================
 
     Set ch = plotter.Channels(1)
-    Set ch.Signal = FindDBC1Signal("EMduleInCirct_U_Actl3")
+    Set ch.Signal = FindDBC5Signal("UCapMduleAux_U_Act/")
     Set ch.YAxis = axVolt
-    ch.Title = "EMduleInCirct_U_Actl3"
+    ch.Title = "UCapMduleAux_U_Act/"
 
-    AddEPASSignal plotter, "EMduleOutCirct_U_Actl3", axVolt
-    AddEPASSignal plotter, "Cell_U_Actl3", axVolt
-
-
-    '================================
-    ' CURRENT
-    '================================
-
-    AddEPASSignal plotter, "EMduleInCirct_I_Actl3", axCurr
-    AddEPASSignal plotter, "EMduleOutCirct_I_Actl3", axCurr
+    Add48VSignal plotter, "UCapMdule_U_Actl", axVolt
+    Add48VSignal plotter, "Cell_U_Actl3", axVolt
 
 
-    '================================
-    ' SSR MODE
-    '================================
+    '========================
+    ' CURRENT - 2
+    '========================
 
-    AddEPASSignal plotter, "EMdule_D_Stat3", axMode
-    AddEPASSignal plotter, "EMduleMde_D_Rq3", axMode
+    Add48VSignal plotter, "UCapMdule_I_Acti", axCurr
 
-
-    '================================
-    ' PID
-    '================================
-
-    AddEPASSignal plotter, "IsolSwtch_B_Cmd3", axPID
-    AddEPASSignal plotter, "IsolSwtch _B_Stat3", axPID
+    'REPLACE THIS WITH EXACT FULL DBC SIGNAL NAME
+    Add48VSignal plotter, "UCapMduleAux_I_Actl_[a...", axCurr
 
 
-    '================================
-    ' TEMPERATURE
-    '================================
+    '========================
+    ' SSR MODE - 2
+    '========================
 
-    AddEPASSignal plotter, "FET_Te_Act3", axTemp
-    AddEPASSignal plotter, "Cell_Te_Actl3", axTemp
+    Add48VSignal plotter, "UCapMdule_D_Stat", axMode
+    Add48VSignal plotter, "UCapMduleMde_D_Rq", axMode
+
+
+    '========================
+    ' TEMPERATURE / ESTIMATES - 4
+    '========================
+
+    Add48VSignal plotter, "FET_Te_Actl3", axTemp
+    Add48VSignal plotter, "Cell_Te_Actl3", axTemp
+    Add48VSignal plotter, "Cel_C_Est3", axTemp
+    Add48VSignal plotter, "CelEsrST_R_Est3", axTemp
 
 End Sub
 
 
-Sub AddEPASSignal(plotter, signalName, yAxis)
+Sub Add48VSignal(plotter, signalName, yAxis)
 
     Dim ch
 
     Set ch = plotter.Channels.Add()
-    Set ch.Signal = FindDBC1Signal(signalName)
+    Set ch.Signal = FindDBC5Signal(signalName)
     Set ch.YAxis = yAxis
     ch.Title = signalName
 
 End Sub
 
 
-Function FindDBC1Signal(signalName)
+Function FindDBC5Signal(signalName)
 
     Dim sig
 
     For Each sig In Signals
 
         If sig.ShortName = signalName Then
-
-            If Left(sig.Name, 6) = "DBC-1." Then
-                Set FindDBC1Signal = sig
+            If Left(sig.Name, 6) = "DBC-5." Then
+                Set FindDBC5Signal = sig
                 Exit Function
             End If
-
         End If
 
     Next
 
-    Err.Raise 1001, , "DBC-1 signal not found: " & signalName
+    Err.Raise 1001, , "DBC-5 signal not found: " & signalName
 
 End Function
