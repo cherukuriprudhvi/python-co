@@ -37,19 +37,20 @@ Sub BUILD_EPAS_PLOT1_FINAL()
 
 
     '================================
-    ' VOLTAGE - 3 SIGNALS
+    ' VOLTAGE
     '================================
 
     Set ch = plotter.Channels(1)
-    Set ch.Signal = FindDBC2Signal("EMduleInCirct_U_Actl3")
+    Set ch.Signal = FindDBC1Signal("EMduleInCirct_U_Actl3")
     Set ch.YAxis = axVolt
+    ch.Title = "EMduleInCirct_U_Actl3"
 
     AddEPASSignal plotter, "EMduleOutCirct_U_Actl3", axVolt
     AddEPASSignal plotter, "Cell_U_Actl3", axVolt
 
 
     '================================
-    ' CURRENT - 2 SIGNALS
+    ' CURRENT
     '================================
 
     AddEPASSignal plotter, "EMduleInCirct_I_Actl3", axCurr
@@ -57,7 +58,7 @@ Sub BUILD_EPAS_PLOT1_FINAL()
 
 
     '================================
-    ' SSR MODE - 2 SIGNALS
+    ' SSR MODE
     '================================
 
     AddEPASSignal plotter, "EMdule_D_Stat3", axMode
@@ -65,7 +66,7 @@ Sub BUILD_EPAS_PLOT1_FINAL()
 
 
     '================================
-    ' PID - 2 SIGNALS
+    ' PID
     '================================
 
     AddEPASSignal plotter, "IsolSwtch_B_Cmd3", axPID
@@ -73,7 +74,7 @@ Sub BUILD_EPAS_PLOT1_FINAL()
 
 
     '================================
-    ' TEMPERATURE - 2 SIGNALS
+    ' TEMPERATURE
     '================================
 
     AddEPASSignal plotter, "FET_Te_Act3", axTemp
@@ -87,14 +88,14 @@ Sub AddEPASSignal(plotter, signalName, yAxis)
     Dim ch
 
     Set ch = plotter.Channels.Add()
-    Set ch.Signal = FindDBC2Signal(signalName)
+    Set ch.Signal = FindDBC1Signal(signalName)
     Set ch.YAxis = yAxis
     ch.Title = signalName
 
 End Sub
 
 
-Function FindDBC2Signal(signalName)
+Function FindDBC1Signal(signalName)
 
     Dim sig
 
@@ -102,8 +103,8 @@ Function FindDBC2Signal(signalName)
 
         If sig.ShortName = signalName Then
 
-            If Left(sig.Name, 6) = "DBC-2." Then
-                Set FindDBC2Signal = sig
+            If Left(sig.Name, 6) = "DBC-1." Then
+                Set FindDBC1Signal = sig
                 Exit Function
             End If
 
@@ -111,6 +112,6 @@ Function FindDBC2Signal(signalName)
 
     Next
 
-    Err.Raise 1001, , "DBC-2 signal not found: " & signalName
+    Err.Raise 1001, , "DBC-1 signal not found: " & signalName
 
 End Function
