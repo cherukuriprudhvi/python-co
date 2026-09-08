@@ -2,26 +2,39 @@
 
 Option Explicit
 
-Sub RENAME_EPAS_AXES()
+Sub MAP_EPAS_PLOT2()
 
     Dim doc, plotter
+    Dim axVolt, axCurr, axMode, axPID, axTemp
 
     Set doc = Documents.Item("Plot2.plt")
     Set plotter = doc.ActiveWindow.Object
 
-    plotter.YAxes(1).Title = "EPAS_Volt"
-    plotter.YAxes(1).IsTitleVisible = True
+    Set axVolt = plotter.YAxes(1)
+    Set axCurr = plotter.YAxes(2)
+    Set axMode = plotter.YAxes(3)
+    Set axPID  = plotter.YAxes(4)
+    Set axTemp = plotter.YAxes(5)
 
-    plotter.YAxes(2).Title = "EPAS_Current"
-    plotter.YAxes(2).IsTitleVisible = True
+    'Voltage
+    Set plotter.Channels(1).YAxis = axVolt
+    Set plotter.Channels(2).YAxis = axVolt
+    Set plotter.Channels(3).YAxis = axVolt
 
-    plotter.YAxes(3).Title = "EPAS_SSR_Mode"
-    plotter.YAxes(3).IsTitleVisible = True
+    'Current
+    Set plotter.Channels(4).YAxis = axCurr
+    Set plotter.Channels(5).YAxis = axCurr
 
-    plotter.YAxes(4).Title = "EPAS_PID"
-    plotter.YAxes(4).IsTitleVisible = True
+    'SSR Mode
+    Set plotter.Channels(6).YAxis = axMode
+    Set plotter.Channels(7).YAxis = axMode
 
-    plotter.YAxes(5).Title = "EPAS_Temperature"
-    plotter.YAxes(5).IsTitleVisible = True
+    'PID
+    Set plotter.Channels(8).YAxis = axPID
+    Set plotter.Channels(9).YAxis = axPID
+
+    'Temperature
+    Set plotter.Channels(10).YAxis = axTemp
+    Set plotter.Channels(11).YAxis = axTemp
 
 End Sub
