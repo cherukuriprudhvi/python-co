@@ -2,78 +2,109 @@
 
 Option Explicit
 
-Sub SETUP_EPAS_PLOT1()
+Sub BUILD_EPAS_PLOT2()
 
     Dim doc, plotter
     Dim axVolt, axCurr, axMode, axPID, axTemp
     Dim ch
 
-    Set doc = Documents.Item("Plot1.plt")
+    Set doc = Documents.Item("Plot2.plt")
     Set plotter = doc.ActiveWindow.Object
 
-    '5 Y-axis group names
+    '========================
+    ' 5 Y-AXES
+    '========================
+
     Set axVolt = plotter.YAxes(1)
     axVolt.Title = "EPAS_Volt"
 
-    Set axCurr = plotter.YAxes(2)
+    Set axCurr = plotter.YAxes.Add()
     axCurr.Title = "EPAS_Current"
 
-    Set axMode = plotter.YAxes(3)
+    Set axMode = plotter.YAxes.Add()
     axMode.Title = "EPAS_SSR_Mode"
 
-    Set axPID = plotter.YAxes(4)
+    Set axPID = plotter.YAxes.Add()
     axPID.Title = "EPAS_PID"
 
-    Set axTemp = plotter.YAxes(5)
+    Set axTemp = plotter.YAxes.Add()
     axTemp.Title = "EPAS_Temperature"
 
-    'Voltage
+
+    '========================
+    ' VOLTAGE - 3 SIGNALS
+    '========================
+
     Set ch = plotter.Channels(1)
-    Set ch.Signal = Signals("EMduleInCirct_U_Actl3")
+    Set ch.Signal = FindDBC2Signal("EMduleInCirct_U_Actl3")
     Set ch.YAxis = axVolt
+    ch.Title = "EMduleInCirct_U_Actl3"
 
-    Set ch = plotter.Channels(2)
-    Set ch.Signal = Signals("EMduleOutCirct_U_Actl3")
-    Set ch.YAxis = axVolt
+    AddSignal plotter, "EMduleOutCirct_U_Actl3", axVolt
+    AddSignal plotter, "Cell_U_Actl3", axVolt
 
-    Set ch = plotter.Channels(3)
-    Set ch.Signal = Signals("Cell_U_Actl3")
-    Set ch.YAxis = axVolt
 
-    'Current
-    Set ch = plotter.Channels(4)
-    Set ch.Signal = Signals("EMduleInCirct_I_Actl3")
-    Set ch.YAxis = axCurr
+    '========================
+    ' CURRENT - 2 SIGNALS
+    '========================
 
-    Set ch = plotter.Channels(5)
-    Set ch.Signal = Signals("EMduleOutCirct_I_Actl3")
-    Set ch.YAxis = axCurr
+    AddSignal plotter, "EMduleInCirct_I_Actl3", axCurr
+    AddSignal plotter, "EMduleOutCirct_I_Actl3", axCurr
 
-    'SSR / Mode
-    Set ch = plotter.Channels(6)
-    Set ch.Signal = Signals("EMdule_D_Stat3")
-    Set ch.YAxis = axMode
 
-    Set ch = plotter.Channels(7)
-    Set ch.Signal = Signals("EMduleMde_D_Rq3")
-    Set ch.YAxis = axMode
+    '========================
+    ' SSR MODE - 2 SIGNALS
+    '========================
 
-    'PID
-    Set ch = plotter.Channels(8)
-    Set ch.Signal = Signals("IsolSwtch_B_Cmd3")
-    Set ch.YAxis = axPID
+    AddSignal plotter, "EMdule_D_Stat3", axMode
+    AddSignal plotter, "EMduleMde_D_Rq3", axMode
 
-    Set ch = plotter.Channels(9)
-    Set ch.Signal = Signals("IsolSwtch _B_Stat3")
-    Set ch.YAxis = axPID
 
-    'Temperature
-    Set ch = plotter.Channels(10)
-    Set ch.Signal = Signals("FET_Te_Act3")
-    Set ch.YAxis = axTemp
+    '========================
+    ' PID - 2 SIGNALS
+    '========================
 
-    Set ch = plotter.Channels(11)
-    Set ch.Signal = Signals("Cell_Te_Actl3")
-    Set ch.YAxis = axTemp
+    AddSignal plotter, "IsolSwtch_B_Cmd3", axPID
+    AddSignal plotter, "IsolSwtch _B_Stat3", axPID
+
+
+    '========================
+    ' TEMPERATURE - 2 SIGNALS
+    '========================
+
+    AddSignal plotter, "FET_Te_Act3", axTemp
+    AddSignal plotter, "Cell_Te_Actl3", axTemp
 
 End Sub
+
+
+Sub AddSignal(plotter, signalName, axis)
+
+    Dim ch
+
+    Set ch = plotter.Channels.Add()
+    Set ch.Signal = FindDBC2Signal(signalName)
+    Set ch.YAxis = axis
+    ch.Title = signalName
+
+End Sub
+
+
+Function FindDBC2Signal(signalName)
+
+    Dim sig
+
+    For Each sig In Signals
+
+        If sig.ShortName = signalName Then
+            If Left(sig.Name, 6) = "DBC-2." Then
+                Set FindDBC2Signal = sig
+                Exit Function
+            End If
+        End If
+
+    Next
+
+    Err.Raise 1001, , "DBC-2 signal not found: " & signalName
+
+End Function
