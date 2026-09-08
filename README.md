@@ -2,7 +2,7 @@
 
 Option Explicit
 
-Sub MAP_EPAS_PLOT2()
+Sub MAP_EPAS_PLOT2_CORRECT()
 
     Dim doc, plotter
     Dim axVolt, axCurr, axMode, axPID, axTemp
@@ -16,25 +16,25 @@ Sub MAP_EPAS_PLOT2()
     Set axPID  = plotter.YAxes(4)
     Set axTemp = plotter.YAxes(5)
 
-    'Voltage
-    Set plotter.Channels(1).YAxis = axVolt
+    'Voltage = Channels 2,3,4
     Set plotter.Channels(2).YAxis = axVolt
     Set plotter.Channels(3).YAxis = axVolt
+    Set plotter.Channels(4).YAxis = axVolt
 
-    'Current
-    Set plotter.Channels(4).YAxis = axCurr
+    'Current = Channels 5,6
     Set plotter.Channels(5).YAxis = axCurr
+    Set plotter.Channels(6).YAxis = axCurr
 
-    'SSR Mode
-    Set plotter.Channels(6).YAxis = axMode
+    'SSR Mode = Channels 7,8
     Set plotter.Channels(7).YAxis = axMode
+    Set plotter.Channels(8).YAxis = axMode
 
-    'PID
-    Set plotter.Channels(8).YAxis = axPID
+    'PID = Channels 9,10
     Set plotter.Channels(9).YAxis = axPID
+    Set plotter.Channels(10).YAxis = axPID
 
-    'Temperature
-    Set plotter.Channels(10).YAxis = axTemp
+    'Temperature = Channels 11,12
     Set plotter.Channels(11).YAxis = axTemp
+    Set plotter.Channels(12).YAxis = axTemp
 
 End Sub
