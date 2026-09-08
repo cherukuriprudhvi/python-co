@@ -2,106 +2,64 @@
 
 Option Explicit
 
-Sub BUILD_48V_PLOT5()
+Sub GROUP_EMB_PLOT4()
 
     Dim doc, plotter
-    Dim axVolt, axCurr, axMode, axTemp
-    Dim ch
+    Dim axVolt, axCurr, axMode, axPID, axTemp
 
-    Set doc = Documents.Item("Plot5.plt")
+    Set doc = Documents.Item("Plot4.plt")
     Set plotter = doc.ActiveWindow.Object
 
     '========================
-    ' 4 Y-AXES
+    ' 5 Y-AXES
     '========================
 
     Set axVolt = plotter.YAxes(1)
-    axVolt.Title = "48V_Voltage"
+    axVolt.Title = "EMB_Voltage"
     axVolt.IsTitleVisible = True
 
     Set axCurr = plotter.YAxes.Add()
-    axCurr.Title = "48v_Current"
+    axCurr.Title = "EMB_Current"
     axCurr.IsTitleVisible = True
 
     Set axMode = plotter.YAxes.Add()
-    axMode.Title = "48v_SSR_Mode"
+    axMode.Title = "EMB_SSR_Mode"
     axMode.IsTitleVisible = True
 
+    Set axPID = plotter.YAxes.Add()
+    axPID.Title = "EMB_PID"
+    axPID.IsTitleVisible = True
+
     Set axTemp = plotter.YAxes.Add()
-    axTemp.Title = "48v_Temperature"
+    axTemp.Title = "EMB_Temperature"
     axTemp.IsTitleVisible = True
 
 
     '========================
-    ' VOLTAGE - 3
+    ' MAP EXISTING CHANNELS
     '========================
 
-    Set ch = plotter.Channels(1)
-    Set ch.Signal = FindDBC5Signal("UCapMduleAux_U_Act/")
-    Set ch.YAxis = axVolt
-    ch.Title = "UCapMduleAux_U_Act/"
+    'Voltage = first 3 signals
+    Set plotter.Channels(1).YAxis = axVolt
+    Set plotter.Channels(2).YAxis = axVolt
+    Set plotter.Channels(3).YAxis = axVolt
 
-    Add48VSignal plotter, "UCapMdule_U_Actl", axVolt
-    Add48VSignal plotter, "Cell_U_Actl3", axVolt
+    'Current = next 3 signals
+    Set plotter.Channels(4).YAxis = axCurr
+    Set plotter.Channels(5).YAxis = axCurr
+    Set plotter.Channels(6).YAxis = axCurr
 
+    'SSR Mode = next 2 signals
+    Set plotter.Channels(7).YAxis = axMode
+    Set plotter.Channels(8).YAxis = axMode
 
-    '========================
-    ' CURRENT - 2
-    '========================
+    'PID = next 2 signals
+    Set plotter.Channels(9).YAxis = axPID
+    Set plotter.Channels(10).YAxis = axPID
 
-    Add48VSignal plotter, "UCapMdule_I_Acti", axCurr
-
-    'REPLACE THIS WITH EXACT FULL DBC SIGNAL NAME
-    Add48VSignal plotter, "UCapMduleAux_I_Actl_[a...", axCurr
-
-
-    '========================
-    ' SSR MODE - 2
-    '========================
-
-    Add48VSignal plotter, "UCapMdule_D_Stat", axMode
-    Add48VSignal plotter, "UCapMduleMde_D_Rq", axMode
-
-
-    '========================
-    ' TEMPERATURE / ESTIMATES - 4
-    '========================
-
-    Add48VSignal plotter, "FET_Te_Actl3", axTemp
-    Add48VSignal plotter, "Cell_Te_Actl3", axTemp
-    Add48VSignal plotter, "Cel_C_Est3", axTemp
-    Add48VSignal plotter, "CelEsrST_R_Est3", axTemp
+    'Temperature / threshold = last 3
+    Set plotter.Channels(11).YAxis = axTemp
+    Set plotter.Channels(12).YAxis = axTemp
+    Set plotter.Channels(13).YAxis = axTemp
 
 End Sub
-
-
-Sub Add48VSignal(plotter, signalName, yAxis)
-
-    Dim ch
-
-    Set ch = plotter.Channels.Add()
-    Set ch.Signal = FindDBC5Signal(signalName)
-    Set ch.YAxis = yAxis
-    ch.Title = signalName
-
-End Sub
-
-
-Function FindDBC5Signal(signalName)
-
-    Dim sig
-
-    For Each sig In Signals
-
-        If sig.ShortName = signalName Then
-            If Left(sig.Name, 6) = "DBC-5." Then
-                Set FindDBC5Signal = sig
-                Exit Function
-            End If
-        End If
-
-    Next
-
-    Err.Raise 1001, , "DBC-5 signal not found: " & signalName
-
-End Function
