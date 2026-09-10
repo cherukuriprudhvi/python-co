@@ -1,26 +1,25 @@
 
 
 # ============================================================
-# 5-MINUTE VALIDATION OF 5-DAY MASTER TEST
+# 5-DAY MASTER TEST - PCAN EXPLORER
 #
-# SCALE:
-# 18 hours FLOAT   -> 45 seconds
-# 6 hours STANDBY  -> 15 seconds
-# 6-hour trace log -> every 15 seconds
-# 5 days           -> 5 minutes
+# INITIAL STARTUP:
+# OFF -> wait 5 sec
+# STANDBY -> wait 5 sec
+# FLOAT -> wait 5 sec
+# Isolation OPEN -> wait 2 sec
+# Isolation CLOSE -> wait 2 sec
 #
-# INITIAL:
-# OFF -> 5 sec
-# STANDBY -> 5 sec
+# TEST:
+# FLOAT = 18 hours
+# STANDBY = 6 hours
+# 5 cycles = approximately 5 days
 #
-# EACH FLOAT ENTRY:
-# FLOAT
-# wait 5 sec
-# Isolation OPEN
-# wait 2 sec
-# Isolation CLOSE
-# wait 2 sec
-# Continue FLOAT until total FLOAT time = 45 sec
+# TRACE:
+# 6 separate trace files
+# Save every 6 hours
+# 4 log sets/day
+# 20 log sets total
 # ============================================================
 
 import os
@@ -37,20 +36,21 @@ LOG_FOLDER = r"C:\Users\pcherupr\OneDrive - Clarios\Documents\PCAN-Explorer 7\PC
 
 CYCLES = 5
 
-FLOAT_SECONDS = 45
-STANDBY_SECONDS = 15
-LOG_INTERVAL_SECONDS = 15
+SIX_HOURS = 6 * 60 * 60
+FLOAT_BLOCKS = 3                 # 3 x 6h = 18 hours
+STANDBY_BLOCKS = 1               # 1 x 6h = 6 hours
 
 OFF_WAIT_SECONDS = 5
-INITIAL_STANDBY_WAIT_SECONDS = 5
+STANDBY_START_WAIT_SECONDS = 5
 
 FLOAT_BEFORE_ISOLATION_SECONDS = 5
+
 ISOLATION_OPEN_SECONDS = 2
 AFTER_ISOLATION_CLOSE_SECONDS = 2
 
 
 # ============================================================
-# TRACE FILES
+# TRACE DOCUMENTS
 # ============================================================
 
 TRACE_NAMES = [
@@ -63,13 +63,18 @@ TRACE_NAMES = [
 ]
 
 
-# Saved logs use SYSTEM NAMES
+# Saved files use actual system names
 LOG_NAMES = {
+
     "CAN_1_FILTER.trc": "EPAS_CAN1",
     "CAN_2_FILTER.trc": "EPAS_CAN2",
+
     "CAN_3_FILTER.trc": "EBB_CAN3",
+
     "CAN_4_FILTER.trc": "EMB_CAN4",
+
     "CAN_5_FILTER.trc": "48V_EPAS_CAN5",
+
     "CAN_6_FILTER.trc": "EBB_CAN6"
 }
 
@@ -91,11 +96,12 @@ PANEL_NAME = "Panel1.ipf"
 
 
 # ============================================================
-# CAN / SYSTEM MAPPING
+# SYSTEM COMMAND MAPPING
 # ============================================================
 
 SYSTEMS = {
 
+    # EPAS
     "CAN1": {
         "id": 0x213,
         "mode": "EMduleMde_D_Rq3",
@@ -108,24 +114,28 @@ SYSTEMS = {
         "isolation": "IsolSwtch_B_Cmd3"
     },
 
+    # EBB
     "CAN3": {
         "id": 0x210,
         "mode": "EMduleMde_D_Rq",
         "isolation": "IsolSwtch_B_Cmd"
     },
 
+    # EMB
     "CAN4": {
         "id": 0x211,
         "mode": "EMduleMde_D_Rq2",
         "isolation": "IsolSwtch_B_Cmd2"
     },
 
+    # 48V EPAS
     "CAN5": {
         "id": 0x212,
         "mode": "UCapMduleMde_D_Rq",
         "isolation": None
     },
 
+    # EBB
     "CAN6": {
         "id": 0x210,
         "mode": "EMduleMde_D_Rq",
@@ -138,7 +148,7 @@ os.makedirs(LOG_FOLDER, exist_ok=True)
 
 STATUS_FILE = os.path.join(
     LOG_FOLDER,
-    "5_MIN_TEST_STATUS.txt"
+    "5_DAY_TEST_STATUS.txt"
 )
 
 
@@ -156,14 +166,19 @@ def log_status(message):
     print(line)
 
     try:
+
         with open(STATUS_FILE, "a") as f:
             f.write(line + "\n")
+
     except:
         pass
 
 
 # ============================================================
 # RESPONSIVE WAIT
+#
+# Do NOT use time.sleep() for long waits.
+# App.Wait keeps PCAN responsive.
 # ============================================================
 
 def wait_seconds(seconds):
@@ -171,11 +186,17 @@ def wait_seconds(seconds):
     end_time = time.monotonic() + seconds
 
     while time.monotonic() < end_time:
+
+        remaining = end_time - time.monotonic()
+
+        if remaining <= 0:
+            break
+
         App.Wait(200)
 
 
 # ============================================================
-# FIND SIX TRACES
+# FIND ALL 6 TRACE FILES
 # ============================================================
 
 trace_docs = []
@@ -183,6 +204,7 @@ trace_docs = []
 for doc in App.Documents:
 
     try:
+
         tracer = doc.Tracer
 
         if doc.Name in TRACE_NAMES:
@@ -193,20 +215,24 @@ for doc in App.Documents:
 
 
 log_status(
-    "FOUND {} TRACE FILES".format(len(trace_docs))
+    "FOUND {} TRACE DOCUMENTS".format(
+        len(trace_docs)
+    )
 )
 
+
+# REAL TEST REQUIRES ALL 6
 if len(trace_docs) != 6:
 
     raise Exception(
-        "STOPPED - Expected 6 trace files, found {}".format(
+        "STOPPED: Expected 6 trace files, found {}".format(
             len(trace_docs)
         )
     )
 
 
 # ============================================================
-# FIND ALL SIX COMMAND MESSAGES
+# FIND COMMAND MESSAGES
 # ============================================================
 
 def find_targets():
@@ -222,6 +248,7 @@ def find_targets():
             if can_name in SYSTEMS:
 
                 if msg.ID == SYSTEMS[can_name]["id"]:
+
                     found[can_name] = msg
 
         except:
@@ -232,6 +259,8 @@ def find_targets():
 
 targets = {}
 
+
+# Retry for 10 seconds before giving up
 for attempt in range(10):
 
     targets = find_targets()
@@ -240,7 +269,7 @@ for attempt in range(10):
         break
 
     log_status(
-        "Waiting for CANs - FOUND {}/6".format(
+        "Waiting for CAN command messages... found {}/6".format(
             len(targets)
         )
     )
@@ -248,32 +277,52 @@ for attempt in range(10):
     wait_seconds(1)
 
 
+log_status(
+    "FOUND {} SYSTEM COMMAND MESSAGES".format(
+        len(targets)
+    )
+)
+
+
+# REAL TEST REQUIRES ALL 6
 if len(targets) != 6:
 
+    missing = []
+
+    for can_name in SYSTEMS:
+
+        if can_name not in targets:
+            missing.append(can_name)
+
     raise Exception(
-        "STOPPED - All 6 CAN command messages not found"
+        "STOPPED: Missing command messages: {}".format(
+            ", ".join(missing)
+        )
     )
 
 
-log_status("ALL 6 CAN COMMAND MESSAGES FOUND")
-
-
 # ============================================================
-# MODE
+# MODE CONTROL
 # ============================================================
 
 def set_mode(value, mode_name):
 
     for can_name in [
-        "CAN1", "CAN2", "CAN3",
-        "CAN4", "CAN5", "CAN6"
+        "CAN1",
+        "CAN2",
+        "CAN3",
+        "CAN4",
+        "CAN5",
+        "CAN6"
     ]:
 
         try:
 
+            msg = targets[can_name]
+
             signal_name = SYSTEMS[can_name]["mode"]
 
-            targets[can_name].SetSignalValue(
+            msg.SetSignalValue(
                 signal_name,
                 value
             )
@@ -288,7 +337,7 @@ def set_mode(value, mode_name):
         except Exception as e:
 
             log_status(
-                "ERROR {} -> {} : {}".format(
+                "ERROR {} MODE {} : {}".format(
                     can_name,
                     mode_name,
                     e
@@ -302,12 +351,26 @@ def set_mode(value, mode_name):
 
 def isolation_open():
 
-    for can_name in SYSTEMS:
+    for can_name in [
+        "CAN1",
+        "CAN2",
+        "CAN3",
+        "CAN4",
+        "CAN5",
+        "CAN6"
+    ]:
 
         signal_name = SYSTEMS[can_name]["isolation"]
 
-        # CAN5 does not have isolation
+        # 48V CAN5 has no isolation command
         if signal_name is None:
+
+            log_status(
+                "{} -> NO ISOLATION COMMAND".format(
+                    can_name
+                )
+            )
+
             continue
 
         try:
@@ -339,7 +402,14 @@ def isolation_open():
 
 def isolation_close():
 
-    for can_name in SYSTEMS:
+    for can_name in [
+        "CAN1",
+        "CAN2",
+        "CAN3",
+        "CAN4",
+        "CAN5",
+        "CAN6"
+    ]:
 
         signal_name = SYSTEMS[can_name]["isolation"]
 
@@ -370,7 +440,53 @@ def isolation_close():
 
 
 # ============================================================
-# START PLOTS
+# FLOAT TRANSITION
+#
+# FLOAT
+# wait 5 sec
+# OPEN
+# wait 2 sec
+# CLOSE
+# wait 2 sec
+# ============================================================
+
+def enter_float():
+
+    log_status(
+        "STARTING FLOAT TRANSITION"
+    )
+
+    set_mode(
+        3,
+        "FLOAT"
+    )
+
+    wait_seconds(
+        FLOAT_BEFORE_ISOLATION_SECONDS
+    )
+
+
+    isolation_open()
+
+    wait_seconds(
+        ISOLATION_OPEN_SECONDS
+    )
+
+
+    isolation_close()
+
+    wait_seconds(
+        AFTER_ISOLATION_CLOSE_SECONDS
+    )
+
+
+    log_status(
+        "FLOAT TRANSITION COMPLETE"
+    )
+
+
+# ============================================================
+# START ALL PLOTS
 # ============================================================
 
 plotters = []
@@ -379,21 +495,28 @@ for plot_name in PLOT_NAMES:
 
     try:
 
-        plot_doc = App.Documents.Item(plot_name)
-        plotter = plot_doc.ActiveWindow.Object
+        doc = App.Documents.Item(
+            plot_name
+        )
+
+        plotter = doc.ActiveWindow.Object
 
         plotter.Start()
 
-        plotters.append(plotter)
+        plotters.append(
+            plotter
+        )
 
         log_status(
-            "{} -> STARTED".format(plot_name)
+            "{} -> PLOT STARTED".format(
+                plot_name
+            )
         )
 
     except Exception as e:
 
         log_status(
-            "PLOT ERROR {} : {}".format(
+            "WARNING: {} plot start failed: {}".format(
                 plot_name,
                 e
             )
@@ -401,29 +524,36 @@ for plot_name in PLOT_NAMES:
 
 
 # ============================================================
-# PANEL RUN MODE
+# PANEL -> RUN MODE
 # ============================================================
 
 panel = None
 
 try:
 
-    panel_doc = App.Documents.Item(PANEL_NAME)
+    panel_doc = App.Documents.Item(
+        PANEL_NAME
+    )
+
     panel = panel_doc.ActiveWindow.Object
 
     panel.RunMode = True
 
-    log_status("Panel1.ipf -> RUN MODE")
+    log_status(
+        "Panel1.ipf -> RUN MODE"
+    )
 
 except Exception as e:
 
     log_status(
-        "PANEL ERROR: {}".format(e)
+        "WARNING: Panel RUN MODE failed: {}".format(
+            e
+        )
     )
 
 
 # ============================================================
-# START SIX TRACE LOGS
+# START ALL 6 TRACES
 # ============================================================
 
 for doc in trace_docs:
@@ -441,7 +571,7 @@ for doc in trace_docs:
     except Exception as e:
 
         log_status(
-            "TRACE START ERROR {} : {}".format(
+            "ERROR starting {} : {}".format(
                 doc.Name,
                 e
             )
@@ -449,24 +579,32 @@ for doc in trace_docs:
 
 
 # ============================================================
-# SAVE SIX SEPARATE LOGS
+# SAVE SIX SEPARATE TRACE FILES
 # ============================================================
 
 def save_log_set(log_number, cycle_number, restart=True):
 
     log_status(
-        "SAVING LOG SET {}".format(log_number)
+        "SAVING 6-HOUR LOG SET {}".format(
+            log_number
+        )
     )
 
 
-    # Stop all six
+    # -----------------------------------------
+    # STOP ALL TRACES
+    # -----------------------------------------
+
     for doc in trace_docs:
 
         try:
+
             doc.Tracer.Stop()
+
         except Exception as e:
+
             log_status(
-                "STOP ERROR {} : {}".format(
+                "ERROR stopping {} : {}".format(
                     doc.Name,
                     e
                 )
@@ -478,16 +616,21 @@ def save_log_set(log_number, cycle_number, restart=True):
     )
 
 
-    # Save six different files
+    # -----------------------------------------
+    # SAVE SIX INDIVIDUAL FILES
+    # -----------------------------------------
+
     for doc in trace_docs:
 
         try:
 
-            system_name = LOG_NAMES[doc.Name]
+            system_name = LOG_NAMES[
+                doc.Name
+            ]
 
             filename = os.path.join(
                 LOG_FOLDER,
-                "{}_CYCLE{}_15SEC_LOG{}_{}.trc".format(
+                "{}_CYCLE{}_6H_LOG{}_{}.trc".format(
                     system_name,
                     cycle_number,
                     log_number,
@@ -501,28 +644,37 @@ def save_log_set(log_number, cycle_number, restart=True):
             )
 
             log_status(
-                "SAVED -> {}".format(filename)
+                "SAVED -> {}".format(
+                    filename
+                )
             )
 
         except Exception as e:
 
             log_status(
-                "SAVE ERROR {} : {}".format(
+                "ERROR saving {} : {}".format(
                     doc.Name,
                     e
                 )
             )
 
 
+    # -----------------------------------------
+    # RESTART FOR NEXT 6 HOURS
+    # -----------------------------------------
+
     if restart:
 
         for doc in trace_docs:
 
             try:
+
                 doc.Tracer.Start()
+
             except Exception as e:
+
                 log_status(
-                    "RESTART ERROR {} : {}".format(
+                    "ERROR restarting {} : {}".format(
                         doc.Name,
                         e
                     )
@@ -534,32 +686,52 @@ def save_log_set(log_number, cycle_number, restart=True):
 
 
 # ============================================================
-# INITIAL STARTUP - ONCE
+# TEST START
 # ============================================================
 
-log_status("==============================")
-log_status("5-MINUTE TEST STARTING")
-log_status("==============================")
+log_status(
+    "====================================="
+)
+
+log_status(
+    "5-DAY MASTER TEST STARTING"
+)
+
+log_status(
+    "====================================="
+)
 
 
-# OFF
-set_mode(0, "OFF")
+# ============================================================
+# INITIAL STARTUP - ONLY ONCE
+#
+# OFF 5 SEC
+# STANDBY 5 SEC
+# THEN FLOAT TRANSITION
+# ============================================================
+
+set_mode(
+    0,
+    "OFF"
+)
 
 wait_seconds(
     OFF_WAIT_SECONDS
 )
 
 
-# STANDBY
-set_mode(1, "STANDBY")
+set_mode(
+    1,
+    "STANDBY"
+)
 
 wait_seconds(
-    INITIAL_STANDBY_WAIT_SECONDS
+    STANDBY_START_WAIT_SECONDS
 )
 
 
 # ============================================================
-# 5 CYCLES
+# MAIN 5-DAY TEST
 # ============================================================
 
 log_number = 1
@@ -568,119 +740,98 @@ log_number = 1
 for cycle in range(1, CYCLES + 1):
 
     log_status(
-        "=============================="
+        "====================================="
     )
 
     log_status(
-        "CYCLE {} OF 5".format(cycle)
+        "STARTING CYCLE {} OF {}".format(
+            cycle,
+            CYCLES
+        )
     )
 
     log_status(
-        "=============================="
+        "====================================="
     )
 
 
-    # ========================================================
-    # FLOAT START
-    # ========================================================
+    # --------------------------------------------------------
+    # ENTER FLOAT
+    # --------------------------------------------------------
 
-    float_start = time.monotonic()
-
-    set_mode(3, "FLOAT")
+    enter_float()
 
 
-    # Wait 5 sec after entering FLOAT
-    wait_seconds(
-        FLOAT_BEFORE_ISOLATION_SECONDS
-    )
-
-
-    # OPEN
-    isolation_open()
-
-    wait_seconds(
-        ISOLATION_OPEN_SECONDS
-    )
-
-
-    # CLOSE
-    isolation_close()
-
-    wait_seconds(
-        AFTER_ISOLATION_CLOSE_SECONDS
-    )
-
-
-    # ========================================================
-    # COMPLETE TOTAL 45 SECOND FLOAT PERIOD
+    # --------------------------------------------------------
+    # FLOAT = 18 HOURS
     #
-    # Logs at 15, 30, 45 sec
-    # ========================================================
+    # Save trace after:
+    # 6 hours
+    # 12 hours
+    # 18 hours
+    # --------------------------------------------------------
 
-    next_float_log = 15
+    for float_block in range(
+        1,
+        FLOAT_BLOCKS + 1
+    ):
 
-    while True:
-
-        float_elapsed = (
-            time.monotonic() - float_start
-        )
-
-
-        if float_elapsed >= next_float_log:
-
-            save_log_set(
-                log_number,
+        log_status(
+            "CYCLE {} FLOAT BLOCK {}/3 STARTED".format(
                 cycle,
-                restart=True
+                float_block
             )
-
-            log_number += 1
-            next_float_log += 15
-
-
-        if float_elapsed >= FLOAT_SECONDS:
-            break
-
-
-        App.Wait(200)
-
-
-    log_status(
-        "CYCLE {} -> 45 SEC FLOAT COMPLETE".format(
-            cycle
         )
-    )
+
+        wait_seconds(
+            SIX_HOURS
+        )
 
 
-    # ========================================================
-    # STANDBY 15 SEC
-    # ========================================================
+        save_log_set(
+            log_number,
+            cycle,
+            restart=True
+        )
+
+        log_number += 1
+
+
+        log_status(
+            "CYCLE {} FLOAT {} HOURS COMPLETE".format(
+                cycle,
+                float_block * 6
+            )
+        )
+
+
+    # --------------------------------------------------------
+    # AFTER 18 HOURS -> STANDBY
+    # --------------------------------------------------------
 
     set_mode(
         1,
         "STANDBY"
     )
 
-
-    standby_start = time.monotonic()
-
-
-    while True:
-
-        standby_elapsed = (
-            time.monotonic() - standby_start
+    log_status(
+        "CYCLE {} -> 6-HOUR STANDBY STARTED".format(
+            cycle
         )
+    )
 
 
-        if standby_elapsed >= STANDBY_SECONDS:
-            break
+    # --------------------------------------------------------
+    # STANDBY = 6 HOURS
+    # --------------------------------------------------------
+
+    wait_seconds(
+        SIX_HOURS
+    )
 
 
-        App.Wait(200)
-
-
-    # 60-sec / simulated 24-hour log
-    final_test = (
+    # Final cycle: do not restart tracing after final save
+    final_cycle = (
         cycle == CYCLES
     )
 
@@ -688,29 +839,43 @@ for cycle in range(1, CYCLES + 1):
     save_log_set(
         log_number,
         cycle,
-        restart=not final_test
+        restart=not final_cycle
     )
 
     log_number += 1
 
 
     log_status(
-        "CYCLE {} COMPLETE".format(
+        "CYCLE {} COMPLETE - 24 HOURS".format(
             cycle
         )
     )
 
 
 # ============================================================
-# FINISHED
+# TEST COMPLETE
+#
+# System remains in STANDBY.
 # ============================================================
 
 log_status(
-    "ALL 5 TEST CYCLES COMPLETE"
+    "====================================="
 )
 
 log_status(
-    "20 SEPARATE LOG SETS CREATED"
+    "ALL 5 CYCLES COMPLETE"
+)
+
+log_status(
+    "SYSTEMS REMAIN IN STANDBY"
+)
+
+log_status(
+    "TOTAL 6-HOUR LOG SETS = 20"
+)
+
+log_status(
+    "====================================="
 )
 
 
@@ -721,12 +886,16 @@ log_status(
 for plotter in plotters:
 
     try:
+
         plotter.Stop()
+
     except:
         pass
 
 
-log_status("ALL PLOTS STOPPED")
+log_status(
+    "ALL PLOTS STOPPED"
+)
 
 
 # ============================================================
@@ -746,10 +915,16 @@ if panel is not None:
     except Exception as e:
 
         log_status(
-            "PANEL DESIGN ERROR: {}".format(e)
+            "Panel DESIGN MODE error: {}".format(
+                e
+            )
         )
 
 
-log_status("==============================")
-log_status("5-MINUTE VALIDATION FINISHED")
-log_status("==============================")
+# ============================================================
+# FINISHED
+# ============================================================
+
+log_status(
+    "5-DAY MASTER TEST FINISHED"
+)
