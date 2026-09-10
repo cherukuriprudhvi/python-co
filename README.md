@@ -17,13 +17,10 @@ for msg in App.TransmitMessages:
             expected_id, signal_name = SYSTEMS[can_name]
 
             if msg.ID == expected_id:
-                print("FOUND", can_name, hex(msg.ID), signal_name)
-
-                try:
-                    msg.SetSignalValue(signal_name, 1)
-                    print(can_name, "-> STANDBY SUCCESS")
-                except Exception as e:
-                    print(can_name, "-> SIGNAL ERROR:", e)
+                msg.SetSignalValue(signal_name, 0)
+                print(can_name, "-> OFF SUCCESS")
 
     except Exception as e:
-        print("GENERAL ERROR:", e)
+        print("ERROR:", e)
+
+print("ALL AVAILABLE SYSTEMS -> OFF")
