@@ -1,72 +1,53 @@
 
 
 # ============================================================
-# 2-MINUTE FINAL VALIDATION TEST
-#
-# 2 cycles:
-# FLOAT   = 45 sec
-# STANDBY = 15 sec
+# 2-MINUTE VALIDATION TEST
 #
 # INITIAL:
 # OFF -> 1 sec
 # STANDBY -> 1 sec
 #
-# EACH FLOAT:
+# EACH 1-MINUTE CYCLE:
 # FLOAT -> wait 1 sec
 # Isolation OPEN -> wait 1 sec
 # Isolation CLOSE
 # Continue FLOAT until 45 sec total
+# STANDBY for 15 sec
 #
-# SAVE:
-# End of minute 1 -> LOG1
-# End of minute 2 -> LOG2
+# END MINUTE 1 -> SAVE LOG1
+# END MINUTE 2 -> SAVE LOG2
 #
-# FINAL:
-# OFF
+# FINAL -> OFF
 # ============================================================
 
 import os
 import shutil
 import time
-from datetime import datetime
 
 
 # ============================================================
-# SETTINGS
+# EXISTING LOG FOLDER - NO NEW FOLDER CREATED
 # ============================================================
 
-BASE_LOG_FOLDER = r"C:\Users\pcherupr\OneDrive - Clarios\Documents\PCAN-Explorer 7\PCAN-Testing\Separate_Trace_Logs_CAN1-6"
+LOG_FOLDER = r"C:\Users\pcherupr\OneDrive - Clarios\Documents\PCAN-Explorer 7\PCAN-Testing\Separate_Trace_Logs_CAN1-6"
 
-CYCLES = 2
+
+# ============================================================
+# TIMING
+# ============================================================
 
 FLOAT_SECONDS = 45
 STANDBY_SECONDS = 15
 
-OFF_WAIT_SECONDS = 1
-INITIAL_STANDBY_WAIT_SECONDS = 1
+OFF_WAIT = 1
+STANDBY_START_WAIT = 1
 
-FLOAT_BEFORE_ISOLATION_SECONDS = 1
-ISOLATION_OPEN_SECONDS = 1
-
-
-# ============================================================
-# CREATE NEW FOLDER FOR THIS RUN
-# Prevents old logs being overwritten
-# ============================================================
-
-RUN_TIME = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-LOG_FOLDER = os.path.join(
-    BASE_LOG_FOLDER,
-    "2MIN_TEST_" + RUN_TIME
-)
-
-os.makedirs(LOG_FOLDER, exist_ok=True)
+FLOAT_WAIT = 1
+ISOLATION_OPEN_TIME = 1
 
 
 # ============================================================
-# TRACE DOCUMENTS
-# Keep original PCAN trace document names
+# EXISTING TRACE DOCUMENTS
 # ============================================================
 
 TRACE_NAMES = [
@@ -80,7 +61,7 @@ TRACE_NAMES = [
 
 
 # ============================================================
-# SIMPLE SAVED LOG NAMES
+# SAVED TRACE NAMES
 # ============================================================
 
 LOG_NAMES = {
@@ -94,7 +75,7 @@ LOG_NAMES = {
 
 
 # ============================================================
-# RENAMED PCAN CONNECTIONS
+# RENAMED CONNECTIONS + COMMAND SIGNALS
 # ============================================================
 
 SYSTEMS = {
@@ -129,55 +110,12 @@ SYSTEMS = {
         "isolation": None
     },
 
-    # CAN6 changed from EBB to EPAS
     "EPAS_8012": {
         "id": 0x213,
         "mode": "EMduleMde_D_Rq3",
         "isolation": "IsolSwtch_B_Cmd3"
     }
 }
-
-
-# ============================================================
-# PLOTS / PANEL
-# ============================================================
-
-PLOT_NAMES = [
-    "Plot1_Final.plt",
-    "Plot2_Final.plt",
-    "Plot3_Final.plt",
-    "Plot4_Final.plt",
-    "Plot5_Final.plt",
-    "Plot6_Final.plt"
-]
-
-PANEL_NAME = "Panel1.ipf"
-
-
-# ============================================================
-# STATUS LOG
-# ============================================================
-
-STATUS_FILE = os.path.join(
-    LOG_FOLDER,
-    "STATUS.txt"
-)
-
-
-def log_status(message):
-
-    line = "{} - {}".format(
-        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        message
-    )
-
-    print(line)
-
-    try:
-        with open(STATUS_FILE, "a") as f:
-            f.write(line + "\n")
-    except:
-        pass
 
 
 # ============================================================
@@ -193,7 +131,7 @@ def wait_seconds(seconds):
 
 
 # ============================================================
-# FIND ALL SIX TRACE DOCUMENTS
+# FIND 6 TRACE DOCUMENTS
 # ============================================================
 
 trace_docs = []
@@ -202,140 +140,80 @@ for doc in App.Documents:
 
     try:
 
-        tracer = doc.Tracer
-
         if doc.Name in TRACE_NAMES:
+
+            tracer = doc.Tracer
             trace_docs.append(doc)
 
     except:
         pass
 
 
-log_status(
-    "FOUND {} TRACE FILES".format(
-        len(trace_docs)
-    )
-)
-
+print("FOUND", len(trace_docs), "TRACE FILES")
 
 if len(trace_docs) != 6:
 
     raise Exception(
-        "STOPPED - EXPECTED 6 TRACE FILES, FOUND {}".format(
+        "STOPPED - Expected 6 traces, found {}".format(
             len(trace_docs)
         )
     )
 
 
 # ============================================================
-# FIND ALL SIX COMMAND MESSAGES
+# FIND ALL 6 COMMAND MESSAGES
 # ============================================================
-
-def find_targets():
-
-    found = {}
-
-    for msg in App.TransmitMessages:
-
-        try:
-
-            connection_name = msg.Connection.Name
-
-            if connection_name in SYSTEMS:
-
-                expected_id = SYSTEMS[
-                    connection_name
-                ]["id"]
-
-                if msg.ID == expected_id:
-
-                    found[
-                        connection_name
-                    ] = msg
-
-        except:
-            pass
-
-    return found
-
 
 targets = {}
 
+for msg in App.TransmitMessages:
 
-# Try for up to 10 seconds
-for attempt in range(10):
+    try:
 
-    targets = find_targets()
+        name = msg.Connection.Name
 
-    if len(targets) == 6:
-        break
+        if name in SYSTEMS:
 
-    log_status(
-        "FOUND {}/6 SYSTEM COMMANDS - RETRYING".format(
-            len(targets)
-        )
-    )
+            if msg.ID == SYSTEMS[name]["id"]:
+                targets[name] = msg
 
-    wait_seconds(1)
+    except:
+        pass
 
+
+print("FOUND", len(targets), "SYSTEM COMMANDS")
 
 if len(targets) != 6:
 
-    missing = []
-
-    for name in SYSTEMS:
-
-        if name not in targets:
-            missing.append(name)
-
     raise Exception(
-        "STOPPED - MISSING: {}".format(
-            ", ".join(missing)
-        )
+        "STOPPED - Did not find all 6 system commands"
     )
-
-
-log_status(
-    "ALL 6 SYSTEM COMMANDS FOUND"
-)
 
 
 # ============================================================
 # MODE CHANGE
 # ============================================================
 
-def set_mode(value, mode_name):
+def set_mode(value, text):
 
-    for system_name in SYSTEMS:
+    for name in SYSTEMS:
 
         try:
 
-            signal_name = SYSTEMS[
-                system_name
-            ]["mode"]
-
-            targets[
-                system_name
-            ].SetSignalValue(
-                signal_name,
+            targets[name].SetSignalValue(
+                SYSTEMS[name]["mode"],
                 value
             )
 
-            log_status(
-                "{} -> {}".format(
-                    system_name,
-                    mode_name
-                )
-            )
+            print(name, "->", text)
 
         except Exception as e:
 
-            log_status(
-                "ERROR {} {} : {}".format(
-                    system_name,
-                    mode_name,
-                    e
-                )
+            print(
+                "ERROR",
+                name,
+                text,
+                e
             )
 
 
@@ -345,45 +223,32 @@ def set_mode(value, mode_name):
 
 def isolation_open():
 
-    for system_name in SYSTEMS:
+    for name in SYSTEMS:
 
-        signal_name = SYSTEMS[
-            system_name
-        ]["isolation"]
+        signal = SYSTEMS[name]["isolation"]
 
-        # 48V system has no isolation
-        if signal_name is None:
-
-            log_status(
-                "{} -> ISOLATION SKIPPED".format(
-                    system_name
-                )
-            )
-
+        if signal is None:
+            print(name, "-> NO ISOLATION")
             continue
 
         try:
 
-            targets[
-                system_name
-            ].SetSignalValue(
-                signal_name,
+            targets[name].SetSignalValue(
+                signal,
                 0
             )
 
-            log_status(
-                "{} Isolation -> OPEN".format(
-                    system_name
-                )
+            print(
+                name,
+                "Isolation -> OPEN"
             )
 
         except Exception as e:
 
-            log_status(
-                "ERROR {} OPEN : {}".format(
-                    system_name,
-                    e
-                )
+            print(
+                "ERROR OPEN",
+                name,
+                e
             )
 
 
@@ -393,70 +258,60 @@ def isolation_open():
 
 def isolation_close():
 
-    for system_name in SYSTEMS:
+    for name in SYSTEMS:
 
-        signal_name = SYSTEMS[
-            system_name
-        ]["isolation"]
+        signal = SYSTEMS[name]["isolation"]
 
-        if signal_name is None:
+        if signal is None:
             continue
 
         try:
 
-            targets[
-                system_name
-            ].SetSignalValue(
-                signal_name,
+            targets[name].SetSignalValue(
+                signal,
                 1
             )
 
-            log_status(
-                "{} Isolation -> CLOSE".format(
-                    system_name
-                )
+            print(
+                name,
+                "Isolation -> CLOSE"
             )
 
         except Exception as e:
 
-            log_status(
-                "ERROR {} CLOSE : {}".format(
-                    system_name,
-                    e
-                )
+            print(
+                "ERROR CLOSE",
+                name,
+                e
             )
 
 
 # ============================================================
-# SAVE 6 SEPARATE TRACE FILES
+# SAVE ONE LOG SET
 # ============================================================
 
 def save_log_set(log_number, restart=True):
 
-    log_status(
-        "===== SAVING LOG{} =====".format(
-            log_number
-        )
-    )
+    print("")
+    print("========================")
+    print("SAVING LOG{}".format(log_number))
+    print("========================")
 
 
-    # Stop all traces first
+    # STOP ALL SIX TRACES
     for doc in trace_docs:
 
         try:
             doc.Tracer.Stop()
-
         except Exception as e:
-
-            log_status(
-                "TRACE STOP ERROR {} : {}".format(
-                    doc.Name,
-                    e
-                )
+            print(
+                "TRACE STOP ERROR",
+                doc.Name,
+                e
             )
 
 
-    # Save six separate files
+    # SAVE 6 DIFFERENT FILES
     for doc in trace_docs:
 
         try:
@@ -478,8 +333,9 @@ def save_log_set(log_number, restart=True):
                 filename
             )
 
-            log_status(
-                "SAVED -> {}_LOG{}.trc".format(
+            print(
+                "SAVED ->",
+                "{}_LOG{}.trc".format(
                     system_name,
                     log_number
                 )
@@ -487,151 +343,56 @@ def save_log_set(log_number, restart=True):
 
         except Exception as e:
 
-            log_status(
-                "SAVE ERROR {} : {}".format(
-                    doc.Name,
-                    e
-                )
+            print(
+                "SAVE ERROR",
+                doc.Name,
+                e
             )
 
 
-    # Restart for next minute
     if restart:
 
         for doc in trace_docs:
 
             try:
                 doc.Tracer.Start()
-
             except Exception as e:
-
-                log_status(
-                    "TRACE RESTART ERROR {} : {}".format(
-                        doc.Name,
-                        e
-                    )
+                print(
+                    "TRACE RESTART ERROR",
+                    doc.Name,
+                    e
                 )
 
-        log_status(
+
+        print(
             "ALL 6 TRACES RESTARTED"
         )
 
 
-# ============================================================
-# START PLOTS
-# ============================================================
-
-plotters = []
-
-for plot_name in PLOT_NAMES:
-
-    try:
-
-        plot_doc = App.Documents.Item(
-            plot_name
-        )
-
-        plotter = plot_doc.ActiveWindow.Object
-
-        plotter.Start()
-
-        plotters.append(
-            plotter
-        )
-
-        log_status(
-            "{} -> PLOT STARTED".format(
-                plot_name
-            )
-        )
-
-    except Exception as e:
-
-        log_status(
-            "PLOT WARNING {} : {}".format(
-                plot_name,
-                e
-            )
-        )
-
-
-# ============================================================
-# PANEL -> RUN MODE
-# ============================================================
-
-panel = None
-
-try:
-
-    panel_doc = App.Documents.Item(
-        PANEL_NAME
-    )
-
-    panel = panel_doc.ActiveWindow.Object
-
-    panel.RunMode = True
-
-    log_status(
-        "PANEL -> RUN MODE"
-    )
-
-except Exception as e:
-
-    log_status(
-        "PANEL WARNING : {}".format(
-            e
+    print(
+        "LOG{} COMPLETED".format(
+            log_number
         )
     )
 
 
 # ============================================================
-# START ALL SIX TRACE LOGGERS
+# START ALL SIX TRACES
 # ============================================================
 
 for doc in trace_docs:
 
-    try:
+    doc.Tracer.Start()
 
-        doc.Tracer.Start()
 
-        log_status(
-            "{} -> TRACE STARTED".format(
-                doc.Name
-            )
-        )
-
-    except Exception as e:
-
-        log_status(
-            "TRACE START ERROR {} : {}".format(
-                doc.Name,
-                e
-            )
-        )
+print("")
+print("========================")
+print("2-MIN TEST STARTED")
+print("========================")
 
 
 # ============================================================
-# TEST START
-# ============================================================
-
-log_status(
-    "=================================="
-)
-
-log_status(
-    "2-MINUTE VALIDATION STARTING"
-)
-
-log_status(
-    "=================================="
-)
-
-
-# ============================================================
-# INITIAL STARTUP ONLY ONCE
-#
-# OFF -> 1 sec
-# STANDBY -> 1 sec
+# INITIAL STARTUP
 # ============================================================
 
 set_mode(
@@ -640,7 +401,7 @@ set_mode(
 )
 
 wait_seconds(
-    OFF_WAIT_SECONDS
+    OFF_WAIT
 )
 
 
@@ -650,7 +411,7 @@ set_mode(
 )
 
 wait_seconds(
-    INITIAL_STANDBY_WAIT_SECONDS
+    STANDBY_START_WAIT
 )
 
 
@@ -658,18 +419,18 @@ wait_seconds(
 # TWO 1-MINUTE CYCLES
 # ============================================================
 
-for cycle in range(1, CYCLES + 1):
+for cycle in range(1, 3):
 
-    log_status(
-        "===== CYCLE {} START =====".format(
-            cycle
-        )
+    print("")
+    print(
+        "STARTING CYCLE",
+        cycle
     )
 
 
-    # --------------------------------------------------------
+    # ----------------------------------------
     # FLOAT
-    # --------------------------------------------------------
+    # ----------------------------------------
 
     float_start = time.monotonic()
 
@@ -679,9 +440,9 @@ for cycle in range(1, CYCLES + 1):
     )
 
 
-    # Wait 1 sec after FLOAT
+    # Wait 1 second
     wait_seconds(
-        FLOAT_BEFORE_ISOLATION_SECONDS
+        FLOAT_WAIT
     )
 
 
@@ -689,9 +450,9 @@ for cycle in range(1, CYCLES + 1):
     isolation_open()
 
 
-    # OPEN for exactly 1 sec
+    # Keep open for 1 second
     wait_seconds(
-        ISOLATION_OPEN_SECONDS
+        ISOLATION_OPEN_TIME
     )
 
 
@@ -699,67 +460,48 @@ for cycle in range(1, CYCLES + 1):
     isolation_close()
 
 
-    # --------------------------------------------------------
-    # Continue FLOAT until 45 sec total
-    # --------------------------------------------------------
-
-    while True:
-
-        float_elapsed = (
-            time.monotonic() - float_start
-        )
-
-        if float_elapsed >= FLOAT_SECONDS:
-            break
+    # Continue FLOAT until total 45 sec
+    while (
+        time.monotonic() - float_start
+        < FLOAT_SECONDS
+    ):
 
         App.Wait(100)
 
 
-    log_status(
-        "CYCLE {} -> FLOAT COMPLETE".format(
-            cycle
-        )
+    print(
+        "FLOAT 45 SEC COMPLETE"
     )
 
 
-    # --------------------------------------------------------
+    # ----------------------------------------
     # STANDBY
-    # --------------------------------------------------------
+    # ----------------------------------------
 
     set_mode(
         1,
         "STANDBY"
     )
 
-    standby_start = time.monotonic()
 
-
-    while True:
-
-        standby_elapsed = (
-            time.monotonic() - standby_start
-        )
-
-        if standby_elapsed >= STANDBY_SECONDS:
-            break
-
-        App.Wait(100)
-
-
-    log_status(
-        "CYCLE {} -> STANDBY COMPLETE".format(
-            cycle
-        )
+    wait_seconds(
+        STANDBY_SECONDS
     )
 
 
-    # --------------------------------------------------------
-    # SAVE LOG SET
-    # --------------------------------------------------------
+    print(
+        "STANDBY 15 SEC COMPLETE"
+    )
+
+
+    # ----------------------------------------
+    # SAVE
+    # ----------------------------------------
 
     final_cycle = (
-        cycle == CYCLES
+        cycle == 2
     )
+
 
     save_log_set(
         cycle,
@@ -776,67 +518,10 @@ set_mode(
     "OFF"
 )
 
-log_status(
-    "ALL SYSTEMS -> FINAL OFF"
-)
 
-
-# ============================================================
-# STOP PLOTS
-# ============================================================
-
-for plotter in plotters:
-
-    try:
-        plotter.Stop()
-    except:
-        pass
-
-
-log_status(
-    "ALL PLOTS STOPPED"
-)
-
-
-# ============================================================
-# PANEL -> DESIGN MODE
-# ============================================================
-
-if panel is not None:
-
-    try:
-
-        panel.RunMode = False
-
-        log_status(
-            "PANEL -> DESIGN MODE"
-        )
-
-    except Exception as e:
-
-        log_status(
-            "PANEL DESIGN ERROR : {}".format(
-                e
-            )
-        )
-
-
-# ============================================================
-# FINISHED
-# ============================================================
-
-log_status(
-    "=================================="
-)
-
-log_status(
-    "2-MINUTE TEST COMPLETED SUCCESSFULLY"
-)
-
-log_status(
-    "2 LOG SETS SAVED - 12 TRACE FILES"
-)
-
-log_status(
-    "=================================="
-)
+print("")
+print("========================")
+print("TEST COMPLETED")
+print("LOG1 + LOG2 SAVED")
+print("ALL SYSTEMS -> OFF")
+print("========================")
