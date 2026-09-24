@@ -1,22 +1,211 @@
 
+variables
+{
+  msTimer stepTimer;
+  msTimer txTimer;
 
-Hi [Manager Name],
+  int detectedSystem = 0;
+  int step = 0;
 
-Thank you for taking the time to speak with me today and for offering to look into my situation.
+  // CAN1 / DBC1 control messages
+  message DBC1::EnergyMgmtBodyCtrl_1 ebbMsg;
+  message DBC1::EnergyMgmtBodyCtrl_2 embMsg;
+  message DBC1::EnergyMgmtBodyCtrl_3 v48Msg;
+  message DBC1::EnergyMgmtBodyCtrl_4 epasMsg;
+}
 
-As we discussed, my current contract structure is:
 
-Clarios → TCS → Pacer Staffing → Proteck/Tekhops LLC → Me
+/* =========================
+   AUTO DETECTION - CAN1
+   ========================= */
 
-Pacer Staffing pays $50/hour toward my consultancy. After the 6% VMS fee, approximately $47/hour reaches my consultancy. My consultancy then retains approximately 30%, leaving approximately $32.90/hour before my personal federal and Wisconsin state income taxes.
+on message CAN1.*
+{
+  if (detectedSystem != 0)
+    return;
 
-After estimated federal and state income taxes, my effective take-home comes to approximately $29/hour.
+  // EBB
+  if (this.id == 273 ||
+      this.id == 304 ||
+      this.id == 544 ||
+      this.id == 560 ||
+      this.id == 1024)
+  {
+    detectedSystem = 1;
+    write("CAN1 DETECTED: EBB");
+    startSequence();
+  }
 
-My consultancy is also planning to handle my H-1B filing process in March, so I need to consider that before making any changes on their side.
+  // EMB
+  else if (this.id == 272 ||
+           this.id == 305 ||
+           this.id == 545 ||
+           this.id == 561 ||
+           this.id == 769 ||
+           this.id == 1025)
+  {
+    detectedSystem = 2;
+    write("CAN1 DETECTED: EMB");
+    startSequence();
+  }
 
-I really appreciate your willingness to check whether there is any possibility of simplifying the current structure or reducing one of the intermediate layers.
+  // 48V EPAS
+  else if (this.id == 256 ||
+           this.id == 306 ||
+           this.id == 770)
+  {
+    detectedSystem = 3;
+    write("CAN1 DETECTED: 48V EPAS");
+    startSequence();
+  }
 
-Thank you again for your help and consideration.
+  // EPAS
+  else if (this.id == 309 ||
+           this.id == 1026)
+  {
+    detectedSystem = 4;
+    write("CAN1 DETECTED: EPAS");
+    startSequence();
+  }
+}
 
-Best regards,
-Prudhvi
+
+/* =========================
+   START WITH OFF
+   ========================= */
+
+void startSequence()
+{
+  step = 0;
+
+  setMode(0);      // OFF
+  setTimer(txTimer, 100);
+  setTimer(stepTimer, 5000);
+
+  write("CAN1: OFF");
+}
+
+
+/* =========================
+   CYCLIC TRANSMISSION
+   ========================= */
+
+on timer txTimer
+{
+  sendControlMessage();
+  setTimer(txTimer, 100);
+}
+
+
+/* =========================
+   STARTUP SEQUENCE
+   ========================= */
+
+on timer stepTimer
+{
+  if (step == 0)
+  {
+    setMode(1);            // STANDBY
+    step = 1;
+
+    write("CAN1: STANDBY");
+    setTimer(stepTimer, 5000);
+  }
+
+  else if (step == 1)
+  {
+    setMode(3);            // FLOAT
+    step = 2;
+
+    write("CAN1: FLOAT");
+
+    // 48V has no isolation
+    if (detectedSystem == 3)
+    {
+      write("CAN1 48V EPAS startup complete");
+    }
+    else
+    {
+      setTimer(stepTimer, 4000);
+    }
+  }
+
+  else if (step == 2)
+  {
+    setIsolation(0);       // OPEN
+    step = 3;
+
+    write("CAN1: Isolation OPEN");
+    setTimer(stepTimer, 2000);
+  }
+
+  else if (step == 3)
+  {
+    setIsolation(1);       // CLOSE
+    step = 4;
+
+    write("CAN1: Isolation CLOSE");
+    write("CAN1 startup sequence complete");
+  }
+}
+
+
+/* =========================
+   MODE SELECTION
+   ========================= */
+
+void setMode(int mode)
+{
+  if (detectedSystem == 1)
+    ebbMsg.EMduleMde_D_Rq = mode;
+
+  else if (detectedSystem == 2)
+    embMsg.EMduleMde_D_Rq2 = mode;
+
+  else if (detectedSystem == 3)
+    v48Msg.UCapMduleMde_D_Rq = mode;
+
+  else if (detectedSystem == 4)
+    epasMsg.EMduleMde_D_Rq3 = mode;
+
+  sendControlMessage();
+}
+
+
+/* =========================
+   ISOLATION
+   ========================= */
+
+void setIsolation(int value)
+{
+  if (detectedSystem == 1)
+    ebbMsg.IsolSwtch_B_Cmd = value;
+
+  else if (detectedSystem == 2)
+    embMsg.IsolSwtch_B_Cmd2 = value;
+
+  else if (detectedSystem == 4)
+    epasMsg.IsolSwtch_B_Cmd3 = value;
+
+  sendControlMessage();
+}
+
+
+/* =========================
+   SEND CORRECT MESSAGE ONLY
+   ========================= */
+
+void sendControlMessage()
+{
+  if (detectedSystem == 1)
+    output(ebbMsg);       // 528 / 0x210
+
+  else if (detectedSystem == 2)
+    output(embMsg);       // 529 / 0x211
+
+  else if (detectedSystem == 3)
+    output(v48Msg);       // 530 / 0x212
+
+  else if (detectedSystem == 4)
+    output(epasMsg);      // 531 / 0x213
+}
